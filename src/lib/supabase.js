@@ -31,6 +31,12 @@ export async function testConnection() {
       return { success: false, error: error.message }
     }
     
+    // Debug: Check if user is authenticated
+    console.log('🔐 Auth session:', data.session ? 'Logged in' : 'Not logged in')
+    if (data.session) {
+      console.log('👤 User ID:', data.session.user.id)
+    }
+    
     console.log('✅ Supabase connected successfully!')
     return { success: true, data: 'Connection verified' }
   } catch (err) {

@@ -69,8 +69,10 @@ CREATE TRIGGER update_tasks_updated_at
     BEFORE UPDATE ON tasks 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Sample data for testing (optional)
--- INSERT INTO tasks (user_id, title, description, priority, status) VALUES
--- (auth.uid(), 'Set up database schema', 'Create the core tasks table with all necessary fields', 8, 'done'),
--- (auth.uid(), 'Build task CRUD interface', 'Create, read, update, delete operations for tasks', 9, 'in_progress'),
--- (auth.uid(), 'Integrate AI chat functionality', 'Connect the chat interface to LLM service', 6, 'todo'); 
+-- Sample data for testing
+INSERT INTO tasks (user_id, title, description, priority, status, difficulty_level, context_tags, locations) VALUES
+(auth.uid(), 'Set up database schema', 'Create the core tasks table with all necessary fields', 8, 'done', 6, '{"database", "setup"}', '{"office"}'),
+(auth.uid(), 'Build task CRUD interface', 'Create, read, update, delete operations for tasks', 9, 'in_progress', 7, '{"development", "frontend"}', '{"home", "office"}'),
+(auth.uid(), 'Integrate AI chat functionality', 'Connect the chat interface to LLM service', 6, 'todo', 8, '{"ai", "integration"}', '{"anywhere"}'),
+(auth.uid(), 'Design priority algorithm', 'Create smart priority ranking system for tasks', 7, 'backlog', 9, '{"ai", "algorithm"}', '{"home"}'),
+(auth.uid(), 'Add user authentication', 'Implement secure user login and registration', 5, 'blocked', 4, '{"auth", "security"}', '{"office"}'); 

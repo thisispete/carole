@@ -1,126 +1,81 @@
-# Carole - AI Personal Assistant & Project Manager
+# Carole AI Personal Assistant
 
-A proactive AI assistant designed to learn vector databases, AI personalization, and advanced task management patterns.
+**Status:** Phase 1 Complete ✅ | Phase 2 Ready to Start 🚀
 
-## Project Overview
+A proactive AI assistant designed to learn vector databases, AI personalization, and advanced task management patterns. This is a learning project focused on building sophisticated AI-human interaction patterns.
 
-Carole is an AI-powered personal assistant that goes beyond reactive chat interfaces to actively manage tasks, priorities, and project workflows. The system learns user patterns and provides intelligent, contextual assistance for both personal and professional task management.
+## 🎯 **Current Status (Phase 1 Complete)**
 
-### Key Learning Goals
+### ✅ **Working Features**
 
-- **Vector Database Implementation**: Practical applications using Supabase pgvector
-- **AI Agent Personalization**: Building AI that adapts to user preferences
-- **Proactive AI Design**: AI that initiates conversations and provides value
-- **Hybrid Data Architecture**: Combining structured and unstructured data patterns
+- **Real Task Management**: Complete CRUD operations with Supabase database
+- **Priority Dashboard**: Top 3 tasks with intelligent sorting (0-10 scale)
+- **5-State Workflow**: backlog → todo → in_progress → blocked → done
+- **Rich Task Data**: Tags, locations, priority, difficulty, time estimates
+- **Beautiful UI**: Status colors, priority badges, responsive design
+- **Database Integration**: Row Level Security, full-text search, performance indexes
 
-## Tech Stack
+### 🏗️ **Architecture**
 
-- **Frontend**: SvelteKit + shadcn-svelte
-- **Backend**: Supabase (PostgreSQL + pgvector)
-- **AI**: Company LLM infrastructure (Bedrock)
-- **Deployment**: Supabase hosting
+- **Frontend**: SvelteKit + TypeScript
+- **Database**: Supabase (PostgreSQL + pgvector ready)
+- **Deployment**: Ready for Vercel/Netlify
+- **Version Control**: Private repository with proper licensing
 
-## Key Features
+## 🚀 **Next Phase: AI Integration**
 
-### 🎯 Proactive Priority Management
+Ready to implement:
 
-- AI presents top 3 priorities immediately on app open
-- Learns user priority patterns over time
-- Handles both simple todos and complex hierarchical projects
+- AI chat interface with task context
+- Natural language task creation
+- Smart priority recommendations
+- Vector database for conversation memory
+- Company LLM integration (Bedrock/Databricks)
 
-### 🧠 Intelligent Task Management
+## 📋 **Quick Start**
 
-- Natural language task creation through chat
-- Automatic task breakdown and subtask suggestion
-- Dependency tracking with conflict detection
-- Mixed context support (work + personal)
+### Prerequisites
 
-### 💬 Conversational Interface
+- Node.js 18+
+- Supabase account
 
-- Full conversation memory using vector storage
-- Semantic search across all past interactions
-- Rapid-fire quiz interface for quick priority setting
-- Context-aware AI responses
+### Setup
 
-### 🔗 Smart Dependencies
+```bash
+git clone https://github.com/thisispete/carole.git
+cd carole
+npm install
 
-- Visual dependency relationship tracking
-- Automatic priority propagation for blocking tasks
-- Circular dependency detection and prevention
-- Conflict resolution suggestions
+# Configure environment variables
+cp .env.example .env.local
+# Add your Supabase URL and keys
 
-## Project Structure
-
-```
-/docs/
-  ├── requirements.md     # Comprehensive feature and technical requirements
-  ├── project-plan.md     # Development phases and task breakdown
-  └── architecture.md     # Technical architecture decisions (TBD)
-
-/src/                     # SvelteKit application code (TBD)
-/supabase/               # Database schemas and migrations (TBD)
+npm run dev
 ```
 
-## Development Phases
+### Database Setup
 
-### Phase 1: Foundation & MVP (Weeks 1-2)
+1. Create Supabase project
+2. Run the SQL migration from `src/lib/database.sql`
+3. Temporarily disable RLS for development: `ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;`
 
-Basic task management with simple AI chat integration
+## 📚 **Documentation**
 
-### Phase 2: AI Intelligence & Vector Storage (Weeks 3-4)
+- **[Requirements](docs/requirements.md)** - Complete feature specifications
+- **[Database Schema](docs/database-schema.md)** - Finalized table structures
+- **[Project Plan](docs/project-plan.md)** - Development phases and progress
+- **[UX Flow](docs/user-experience-flow.md)** - Interaction patterns and decisions
+- **[Development Setup](docs/development-setup.md)** - Environment configuration
 
-Proactive AI behavior and conversation memory using pgvector
+## 🎯 **Learning Goals**
 
-### Phase 3: Advanced Features & Dependencies (Weeks 5-6)
+This project explores:
 
-Complex task relationships and rapid-fire quiz interface
+- **Vector Databases**: Semantic search and AI memory
+- **AI Personalization**: Learning user patterns and preferences
+- **Proactive AI**: Beyond reactive chat to intelligent assistance
+- **Task Intelligence**: Context-aware priority and project management
 
-### Phase 4: Polish & Advanced Learning (Weeks 7-8)
+## 📄 **License**
 
-Performance optimization and advanced vector database features
-
-## Getting Started
-
-_Development setup instructions will be added as the project progresses._
-
-## Documentation
-
-- **[Requirements Document](./docs/requirements.md)**: Comprehensive feature and technical requirements
-- **[Project Plan](./docs/project-plan.md)**: Development phases, tasks, and timeline
-- **[Development Setup](./docs/development-setup.md)**: Local development environment setup
-- **[Database Schema](./docs/database-schema.md)**: Complete database design and structure
-- **[User Experience Flow](./docs/user-experience-flow.md)**: User journeys and interaction patterns
-- **[Decisions Summary](./docs/decisions-summary.md)**: Key architectural and design decisions
-- **[Codebase Analysis](./docs/codebase-analysis.md)**: Implementation guidance from existing projects
-
-## Learning Outcomes
-
-This project is designed to provide hands-on experience with:
-
-- Vector database practical applications and optimization
-- AI agent personalization and behavioral learning
-- Proactive AI system design patterns
-- Hybrid structured/unstructured data architectures
-- Real-world AI application development
-
-## Status
-
-**Current Phase**: Phase 1 - Foundation & MVP (In Progress)  
-**Completed**:
-
-- ✅ SvelteKit project setup with TypeScript
-- ✅ 3-page application structure (Landing, Tasks, Analytics)
-- ✅ Basic UI components and routing
-- ✅ Priority dashboard UI with sample data
-- ✅ Task browser with filtering and sample tasks
-- ✅ Chat interface UI ready for AI integration
-
-**Next Steps**:
-
-- 🔄 Supabase setup and database schema
-- 🔄 shadcn-svelte component library integration
-- 🔄 AI chat functionality with LLM integration
-
----
-
-_This project serves as both a practical learning exercise and a genuinely useful personal productivity tool. All development decisions reference back to the requirements document as the north star._
+UNLICENSED - Private project for learning purposes.
