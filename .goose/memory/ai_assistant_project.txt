@@ -1,0 +1,116 @@
+# ai-assistant vector-database project-planning sveltekit task-management
+AI Personal Assistant/Project Manager Learning Project:
+
+CORE CONCEPT:
+- Personal productivity tool for learning vector databases and AI agent personalization
+- Proactive AI that presents top 3 priorities immediately on app open (not just reactive chat)
+- UI-based interactions including rapid-fire quiz style priority ranking
+- Full conversation memory storage for complete context retention
+
+TASK MANAGEMENT SCOPE:
+- Flexible task hierarchy: simple todos ("buy dog food") to complex projects ("build website" → "landing page" → "localize to 3 regions")
+- Mixed contexts: work and personal tasks
+- Dependency tracking with priority conflicts (high priority task A depends on low priority task X)
+- Status updates, blockers, completion tracking
+
+TECHNICAL ARCHITECTURE:
+- Frontend: SvelteKit (user's comfort zone), considering shadcn-svelte for UI consistency
+- AI Strategy: Single LLM with different modes to start (chat, priority, questioning)
+- Data: Hybrid approach - structured database for task data + vector database for conversation memory/context
+- Infrastructure options being researched: Supabase (free, beginner-friendly) vs Databricks (company infrastructure)
+
+UI FEATURES:
+- Top 3 priority display on app open
+- Rapid-fire quiz UI for priority ranking
+- Standard chat interface for updates
+- All tasks view separate from priority view
+
+LEARNING GOALS:
+- Vector database implementation and usage patterns
+- AI agent personalization beyond chat interfaces
+- Proactive AI behavior and priority assessment
+
+# tech-stack documentation supabase sveltekit
+Tech Stack Decision & Documentation Approach:
+
+FINAL TECH STACK:
+- Frontend: SvelteKit + shadcn-svelte for UI components
+- Backend: Supabase (PostgreSQL + pgvector for hybrid structured/vector storage)
+- AI: Single LLM approach to start (using company's Bedrock/LLM infrastructure)
+- Deployment: TBD (likely Supabase hosting or Blockcell)
+
+DOCUMENTATION PHILOSOPHY:
+- Thorough documentation as "north star" for project
+- Keep docs updated throughout development
+- Refer back to requirements doc for all decisions
+- Document-driven development approach
+
+NEXT STEPS PLANNED:
+1. Requirements Document (comprehensive feature/technical requirements)
+2. Project Plan (phases and task breakdown)  
+3. Database Schema Design (structured + vector storage)
+4. UI/UX Wireframes (priority view, chat, quiz interfaces)
+
+# ai-personality personalization tone example
+AI Personality & Personalization - Perfect Example:
+
+IDEAL TONE EXAMPLE: "You've been mentioning feeling overwhelmed - want to focus on just one small win today?"
+
+This captures the exact right level of:
+- Deep personal awareness ("I see you")
+- Gentle, supportive tone
+- Helpful suggestion without being prescriptive
+- Friend-like observation, not clinical analysis
+- Acknowledges emotional state without diagnosing
+- Offers concrete, actionable help
+
+AI PERSONALITY GUIDELINES:
+- Observational, not diagnostic: "I noticed..." not "You have a problem with..."
+- Helpful, not prescriptive: "Want to try..." not "You should..."
+- Supportive, not clinical: "Rough week?" not "You seem to be experiencing stress"
+- Super personal awareness but friendly assistant tone, not manager or therapist
+
+# goal-coaching major-feature career-advancement life-goals
+NEW MAJOR FEATURE: Goal Coaching System
+
+CONCEPT:
+- AI acts as goal coach, not just task manager
+- User provides context about career stage, life goals, aspirations
+- AI factors goal advancement into task prioritization
+- Proactive prompting for goal-advancing opportunities
+- Track abstract goals alongside concrete tasks
+
+EXAMPLES:
+- Career: "I want to advance to senior engineer" → AI prioritizes learning tasks, networking, skill-building
+- Life: "Improve house curb appeal" → AI connects painting, landscaping, maintenance tasks to larger goal
+- AI suggests: "You mentioned wanting to advance your career - this conference task could be really valuable"
+
+GOAL TYPES:
+- Career advancement goals
+- Life improvement goals (house, health, relationships)
+- Learning and skill development goals
+- Abstract aspirational goals with concrete task connections
+
+AI BEHAVIOR:
+- Proactively surfaces goal-advancing opportunities
+- Connects seemingly unrelated tasks to larger goals
+- Suggests new tasks that advance goals
+- Celebrates progress toward goals, not just task completion
+
+# mvp-focus feature-scope implementation-ready
+Feature Scope Decision - MVP Focus:
+
+User reviewed potential additional features (calendar integration, weather awareness, location awareness, energy pattern recognition, etc.) and decided NONE are necessary for MVP.
+
+PHILOSOPHY: Focus on core MVP first, expand later if needed
+- Keep it simple and focused on the core learning goals
+- Don't over-engineer with features that don't resonate
+- Build the foundation well before adding complexity
+
+NEXT STEP: Move from planning to implementation - Phase 1 MVP
+- Basic task management with hierarchy
+- Simple AI chat integration  
+- Goal pattern recognition
+- Priority system with smart logic
+- Vector database foundation
+
