@@ -1,0 +1,45 @@
+/* Tailwind CSS imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Base Styles */
+:root {
+  /* BOSS UI Design Tokens (to be synced with team) */
+  --boss-primary: #3b82f6;
+  --boss-secondary: #64748b;
+  --boss-accent: #8b5cf6;
+  --boss-neutral: #374151;
+  --boss-success: #10b981;
+  --boss-warning: #f59e0b;
+  --boss-error: #ef4444;
+  
+  /* Spacing scale */
+  --boss-space-xs: 0.25rem;
+  --boss-space-sm: 0.5rem;
+  --boss-space-md: 1rem;
+  --boss-space-lg: 1.5rem;
+  --boss-space-xl: 2rem;
+  --boss-space-2xl: 3rem;
+  
+  /* Typography */
+  --boss-font-family: 'Inter', system-ui, sans-serif;
+  --boss-font-size-sm: 0.875rem;
+  --boss-font-size-base: 1rem;
+  --boss-font-size-lg: 1.125rem;
+  --boss-font-size-xl: 1.25rem;
+  --boss-font-size-2xl: 1.5rem;
+  
+  /* Border radius */
+  --boss-radius-sm: 0.25rem;
+  --boss-radius-md: 0.375rem;
+  --boss-radius-lg: 0.5rem;
+  --boss-radius-xl: 0.75rem;
+}
+
+body {
+  font-family: var(--boss-font-family);
+  font-size: var(--boss-font-size-base);
+  line-height: 1.5;
+  color: var(--boss-neutral);
+} 

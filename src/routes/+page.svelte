@@ -1,13 +1,14 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { testConnection } from "$lib/supabase.js";
   import { getTopPriorityTasks, debugAllTasks } from "$lib/taskService.js";
 
   let connectionStatus = "Testing...";
   let connectionDetails = "";
-  let priorityTasks = [];
+  let priorityTasks: any[] = [];
   let tasksLoading = true;
   let tasksError = "";
+  let chatMessage = "";
 
   onMount(async () => {
     // Test connection
@@ -26,7 +27,7 @@
       priorityTasks = tasksResult.data;
       tasksError = "";
     } else {
-      tasksError = tasksResult.error;
+      tasksError = tasksResult.error || "Unknown error";
       priorityTasks = [];
     }
     tasksLoading = false;
@@ -35,8 +36,8 @@
     await debugAllTasks();
   });
 
-  function getStatusColor(status) {
-    const colors = {
+  function getStatusColor(status: string) {
+    const colors: Record<string, string> = {
       todo: "#007acc",
       in_progress: "#ff9500",
       blocked: "#ff3b30",
@@ -45,216 +46,199 @@
     };
     return colors[status] || "#007acc";
   }
+
+  function handleSendMessage() {
+    if (chatMessage.trim()) {
+      // TODO: Implement chat functionality
+      console.log("Sending message:", chatMessage);
+      chatMessage = "";
+    }
+  }
 </script>
 
-<h1>Welcome to Carole</h1>
-<p>Your AI Personal Assistant &amp; Project Manager</p>
-
-<div class="connection-status">
-  <small>{connectionStatus}</small>
-  {#if connectionDetails}
-    <small class="error-details">({connectionDetails})</small>
-  {/if}
-</div>
-
-<div class="priority-section">
-  <h2>Top 3 Priorities</h2>
-  <div class="priority-list">
-    {#if tasksLoading}
-      <div class="priority-item loading">Loading tasks...</div>
-    {:else if tasksError}
-      <div class="priority-item error">Error: {tasksError}</div>
-    {:else if priorityTasks.length === 0}
-      <div class="priority-item empty">No active tasks found</div>
-    {:else}
-      {#each priorityTasks as task}
-        <div
-          class="priority-item"
-          style="border-left-color: {getStatusColor(task.status)}"
+<div class="max-w-4xl mx-auto p-6 space-y-8">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b p-4 rounded-lg">
+    <nav class="flex items-center justify-between">
+      <div class="text-2xl font-bold text-blue-600">Carole</div>
+      <div class="hidden md:flex space-x-8">
+        <a href="/" class="text-blue-600 border-b-2 border-blue-600 pb-1"
+          >Home</a
         >
-          <div class="task-header">
-            <span class="task-title">{task.title}</span>
-            <span class="task-priority">P{task.priority}</span>
-          </div>
-          <div class="task-meta">
-            <span class="task-status">{task.status.replace("_", " ")}</span>
-            {#if task.context_tags && task.context_tags.length > 0}
-              <span class="task-tags">
-                {#each task.context_tags.slice(0, 2) as tag}
-                  <span class="tag">{tag}</span>
-                {/each}
-              </span>
-            {/if}
-          </div>
-        </div>
-      {/each}
-    {/if}
-  </div>
-</div>
+        <a
+          href="/tasks"
+          class="text-gray-600 hover:text-blue-600 transition-colors pb-1"
+          >Tasks</a
+        >
+        <a
+          href="/analytics"
+          class="text-gray-600 hover:text-blue-600 transition-colors pb-1"
+          >Analytics</a
+        >
+      </div>
+    </nav>
+  </header>
 
-<div class="chat-section">
-  <h3>Chat with Carole</h3>
-  <div class="chat-interface">
-    <div class="chat-messages">
-      <p>
-        Hello! I'm Carole, your AI assistant. How can I help you manage your
-        tasks today?
+  <!-- Welcome Section -->
+  <div class="bg-white rounded-lg shadow-sm border p-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Carole</h1>
+    <p class="text-gray-600 mb-4">
+      Your AI Personal Assistant &amp; Project Manager
+    </p>
+
+    <div class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {connectionStatus.includes(
+          '✅'
+        )
+          ? 'bg-green-600 text-white'
+          : 'bg-red-600 text-white'}"
+      >
+        {connectionStatus}
+      </span>
+      {#if connectionDetails}
+        <span class="text-sm text-red-600">({connectionDetails})</span>
+      {/if}
+    </div>
+  </div>
+
+  <!-- Priority Dashboard Section -->
+  <div class="bg-white rounded-lg shadow-sm border">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-semibold">Top 3 Priorities</h2>
+      <p class="text-sm text-gray-600">Your most important tasks right now</p>
+    </div>
+    <div class="p-6">
+      <div class="space-y-3">
+        {#if tasksLoading}
+          <div class="flex items-center justify-center py-8">
+            <div
+              class="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-6 h-6"
+            ></div>
+            <span class="ml-2 text-gray-600">Loading tasks...</span>
+          </div>
+        {:else if tasksError}
+          <div class="text-center py-8">
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white"
+            >
+              Error: {tasksError}
+            </span>
+          </div>
+        {:else if priorityTasks.length === 0}
+          <div class="text-center py-8 text-gray-600">
+            No active tasks found
+          </div>
+        {:else}
+          {#each priorityTasks as task}
+            <div
+              class="bg-white rounded-lg border shadow-sm p-4 transition-all duration-200 hover:shadow-md border-l-4"
+              style="border-left-color: {getStatusColor(task.status)}"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-medium text-gray-800">{task.title}</h3>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-800"
+                  >
+                    P{task.priority}
+                  </span>
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {task.status ===
+                    'done'
+                      ? 'bg-green-600 text-white'
+                      : task.status === 'blocked'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-900 text-white'}"
+                  >
+                    {task.status.replace("_", " ")}
+                  </span>
+                </div>
+              </div>
+              {#if task.context_tags && task.context_tags.length > 0}
+                <div class="flex flex-wrap gap-1">
+                  {#each task.context_tags.slice(0, 3) as tag}
+                    <span
+                      class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
+                      >{tag}</span
+                    >
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Interface Section -->
+  <div class="bg-white rounded-lg shadow-sm border">
+    <div class="p-6 border-b">
+      <h3 class="text-2xl font-semibold">Chat with Carole</h3>
+      <p class="text-sm text-gray-600">
+        Get help with your tasks and priorities
       </p>
     </div>
-    <div class="chat-input">
-      <input type="text" placeholder="Type your message..." />
-      <button>Send</button>
+    <div class="p-6">
+      <div class="flex flex-col h-full bg-white rounded-lg border shadow-sm">
+        <div class="flex-1 p-4 overflow-y-auto space-y-4 min-h-[200px]">
+          <div class="flex gap-3 justify-start">
+            <div
+              class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800"
+            >
+              Hello! I'm Carole, your AI assistant. How can I help you manage
+              your tasks today?
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t bg-gray-50 rounded-b-lg">
+          <div class="flex gap-2">
+            <input
+              bind:value={chatMessage}
+              placeholder="Type your message..."
+              class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            />
+            <button
+              on:click={handleSendMessage}
+              disabled={!chatMessage.trim()}
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Section (Placeholder) -->
+  <div class="bg-white rounded-lg shadow-sm border">
+    <div class="p-6 border-b">
+      <h3 class="text-2xl font-semibold">Quick Check-in</h3>
+      <p class="text-sm text-gray-600">
+        Help me understand your current priorities
+      </p>
+    </div>
+    <div class="p-6">
+      <div class="text-gray-600 text-center py-4">
+        Quiz interface will appear here when AI confidence is low
+      </div>
     </div>
   </div>
 </div>
 
-<nav>
-  <a href="/tasks">Browse All Tasks</a>
-  <a href="/analytics">Analytics</a>
-</nav>
-
-<style>
-  h1 {
-    color: #333;
-    margin-bottom: 0.5rem;
+<style lang="scss">
+  /* Custom styles for landing page using BOSS UI system */
+  .text-boss-neutral {
+    color: var(--boss-neutral);
   }
 
-  .priority-section {
-    margin: 2rem 0;
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+  .text-boss-secondary {
+    color: var(--boss-secondary);
   }
 
-  .priority-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .priority-item {
-    padding: 0.75rem;
-    background: #f5f5f5;
-    border-radius: 4px;
-    border-left: 4px solid #007acc;
-  }
-
-  .priority-item.loading,
-  .priority-item.error,
-  .priority-item.empty {
-    text-align: center;
-    font-style: italic;
-    color: #666;
-  }
-
-  .priority-item.error {
-    background: #fff5f5;
-    border-left-color: #ff3b30;
-    color: #d73a49;
-  }
-
-  .task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .task-title {
-    font-weight: 500;
-    color: #333;
-  }
-
-  .task-priority {
-    background: #007acc;
-    color: white;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-
-  .task-meta {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    font-size: 0.85rem;
-  }
-
-  .task-status {
-    color: #666;
-    text-transform: capitalize;
-  }
-
-  .task-tags {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .tag {
-    background: #e0e0e0;
-    color: #555;
-    padding: 0.1rem 0.4rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
-  }
-
-  .connection-status .error-details {
-    color: #d73a49;
-    margin-left: 0.5rem;
-  }
-
-  .chat-section {
-    margin: 2rem 0;
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  }
-
-  .chat-messages {
-    min-height: 200px;
-    padding: 1rem;
-    background: #f9f9f9;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .chat-input {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .chat-input input {
-    flex: 1;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-
-  .chat-input button {
-    padding: 0.5rem 1rem;
-    background: #007acc;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  nav {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-  }
-
-  nav a {
-    padding: 0.5rem 1rem;
-    background: #f0f0f0;
-    text-decoration: none;
-    border-radius: 4px;
-    color: #333;
-  }
-
-  nav a:hover {
-    background: #e0e0e0;
+  .text-boss-error {
+    color: var(--boss-error);
   }
 </style>

@@ -1,0 +1,155 @@
+/* Carole Layout Styles */
+
+/* Main App Layout */
+.app-layout {
+  @apply min-h-screen bg-gray-50;
+  
+  &__container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  &__header {
+    @apply bg-white shadow-sm border-b;
+  }
+  
+  &__nav {
+    @apply flex items-center justify-between h-16;
+  }
+  
+  &__logo {
+    @apply text-2xl font-bold text-boss-primary;
+  }
+  
+  &__nav-links {
+    @apply hidden md:flex space-x-8;
+  }
+  
+  &__nav-link {
+    @apply text-boss-neutral hover:text-boss-primary transition-colors;
+    @apply border-b-2 border-transparent hover:border-boss-primary;
+    @apply pb-1;
+    
+    &--active {
+      @apply text-boss-primary border-boss-primary;
+    }
+  }
+  
+  &__main {
+    @apply flex-1 py-8;
+  }
+}
+
+/* Landing Page Layout */
+.landing-layout {
+  @apply space-y-8;
+  
+  &__section {
+    @apply bg-white rounded-lg shadow-sm border p-6;
+  }
+  
+  &__section-title {
+    @apply text-lg font-semibold text-boss-neutral mb-4;
+  }
+  
+  /* Three-section layout as specified in UX flow */
+  &__priority-section {
+    @apply mb-6;
+  }
+  
+  &__chat-section {
+    @apply mb-6 min-h-[400px];
+  }
+  
+  &__quiz-section {
+    @apply min-h-[200px];
+  }
+}
+
+/* Tasks Page Layout */
+.tasks-layout {
+  @apply space-y-6;
+  
+  &__header {
+    @apply flex items-center justify-between;
+  }
+  
+  &__title {
+    @apply text-2xl font-bold text-boss-neutral;
+  }
+  
+  &__actions {
+    @apply flex gap-2;
+  }
+  
+  &__filters {
+    @apply flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg;
+  }
+  
+  &__grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+  
+  &__list {
+    @apply space-y-3;
+  }
+}
+
+/* Analytics Page Layout */
+.analytics-layout {
+  @apply space-y-6;
+  
+  &__header {
+    @apply text-center mb-8;
+  }
+  
+  &__title {
+    @apply text-3xl font-bold text-boss-neutral mb-2;
+  }
+  
+  &__subtitle {
+    @apply text-boss-secondary;
+  }
+  
+  &__grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+  
+  &__card {
+    @apply bg-white rounded-lg shadow-sm border p-6;
+  }
+  
+  &__metric {
+    @apply text-3xl font-bold text-boss-primary mb-2;
+  }
+  
+  &__metric-label {
+    @apply text-sm text-boss-secondary;
+  }
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .app-layout {
+    &__nav-links {
+      @apply hidden;
+    }
+  }
+  
+  .tasks-layout {
+    &__grid {
+      @apply grid-cols-1;
+    }
+  }
+  
+  .analytics-layout {
+    &__grid {
+      @apply grid-cols-1;
+    }
+  }
+  
+  .landing-layout {
+    &__chat-section {
+      @apply min-h-[300px];
+    }
+  }
+} 

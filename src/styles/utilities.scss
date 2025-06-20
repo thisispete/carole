@@ -1,0 +1,217 @@
+/* Carole Utility Classes */
+
+/* BOSS UI Consistent Utilities */
+.boss-transition {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.boss-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-boss-primary focus:ring-offset-2;
+}
+
+.boss-shadow {
+  @apply shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Text Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Loading States */
+.loading-pulse {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-boss-primary;
+}
+
+/* Status Indicators */
+.status-dot {
+  @apply w-2 h-2 rounded-full inline-block mr-2;
+  
+  &--active {
+    @apply bg-boss-success;
+  }
+  
+  &--inactive {
+    @apply bg-boss-secondary;
+  }
+  
+  &--warning {
+    @apply bg-boss-warning;
+  }
+  
+  &--error {
+    @apply bg-boss-error;
+  }
+}
+
+/* Interactive States */
+.interactive {
+  @apply cursor-pointer transition-all duration-200;
+  @apply hover:scale-[1.02] active:scale-[0.98];
+}
+
+.interactive-subtle {
+  @apply cursor-pointer transition-colors duration-200;
+  @apply hover:bg-gray-50 active:bg-gray-100;
+}
+
+/* Priority Indicators */
+.priority-indicator {
+  @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold;
+  
+  &--0 {
+    @apply bg-gray-100 text-gray-500;
+  }
+  
+  &--1, &--2, &--3 {
+    @apply bg-green-100 text-green-700;
+  }
+  
+  &--4, &--5, &--6 {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+  
+  &--7, &--8 {
+    @apply bg-orange-100 text-orange-700;
+  }
+  
+  &--9, &--10 {
+    @apply bg-red-100 text-red-700;
+  }
+}
+
+/* Difficulty Indicators */
+.difficulty-indicator {
+  @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold;
+  
+  &--0 {
+    @apply bg-gray-100 text-gray-500;
+  }
+  
+  &--1, &--2, &--3 {
+    @apply bg-blue-100 text-blue-700;
+  }
+  
+  &--4, &--5, &--6 {
+    @apply bg-purple-100 text-purple-700;
+  }
+  
+  &--7, &--8 {
+    @apply bg-indigo-100 text-indigo-700;
+  }
+  
+  &--9, &--10 {
+    @apply bg-red-100 text-red-700;
+  }
+}
+
+/* Form Utilities */
+.form-group {
+  @apply space-y-2;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-boss-neutral;
+}
+
+.form-error {
+  @apply text-sm text-boss-error;
+}
+
+.form-help {
+  @apply text-sm text-boss-secondary;
+}
+
+/* Layout Utilities */
+.section-spacing {
+  @apply py-8 md:py-12;
+}
+
+.content-spacing {
+  @apply space-y-6;
+}
+
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.grid-auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.grid-auto-fill {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* Animation Utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+} 

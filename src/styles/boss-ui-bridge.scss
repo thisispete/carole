@@ -1,0 +1,128 @@
+/* BOSS UI Bridge Styles
+ * These styles help bridge React/shadCN components to Svelte equivalents
+ * Maintains visual consistency with the BOSS UI design system
+ */
+
+/* Button Component Bridge */
+.boss-button {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  @apply disabled:pointer-events-none disabled:opacity-50;
+  
+  /* Size variants */
+  &--sm {
+    @apply h-9 px-3;
+  }
+  
+  &--md {
+    @apply h-10 px-4 py-2;
+  }
+  
+  &--lg {
+    @apply h-11 px-8;
+  }
+  
+  /* Style variants */
+  &--primary {
+    @apply bg-boss-primary text-white hover:bg-boss-primary/90;
+  }
+  
+  &--secondary {
+    @apply bg-boss-secondary text-white hover:bg-boss-secondary/90;
+  }
+  
+  &--outline {
+    @apply border border-boss-neutral bg-transparent hover:bg-boss-neutral hover:text-white;
+  }
+  
+  &--ghost {
+    @apply hover:bg-boss-neutral/10;
+  }
+}
+
+/* Card Component Bridge */
+.boss-card {
+  @apply rounded-lg border bg-white shadow-sm;
+  
+  &__header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+  
+  &__title {
+    @apply text-2xl font-semibold leading-none tracking-tight;
+  }
+  
+  &__description {
+    @apply text-sm text-boss-secondary;
+  }
+  
+  &__content {
+    @apply p-6 pt-0;
+  }
+  
+  &__footer {
+    @apply flex items-center p-6 pt-0;
+  }
+}
+
+/* Input Component Bridge */
+.boss-input {
+  @apply flex h-10 w-full rounded-md border border-boss-neutral/20 bg-white px-3 py-2;
+  @apply text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium;
+  @apply placeholder:text-boss-secondary/50 focus-visible:outline-none focus-visible:ring-2;
+  @apply focus-visible:ring-boss-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Badge Component Bridge */
+.boss-badge {
+  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold;
+  @apply transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+  
+  &--default {
+    @apply border-transparent bg-boss-neutral text-white;
+  }
+  
+  &--success {
+    @apply border-transparent bg-boss-success text-white;
+  }
+  
+  &--warning {
+    @apply border-transparent bg-boss-warning text-white;
+  }
+  
+  &--error {
+    @apply border-transparent bg-boss-error text-white;
+  }
+  
+  &--outline {
+    @apply text-boss-neutral;
+  }
+}
+
+/* Dialog/Modal Component Bridge */
+.boss-dialog {
+  &__overlay {
+    @apply fixed inset-0 z-50 bg-black/80;
+  }
+  
+  &__content {
+    @apply fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%];
+    @apply gap-4 border bg-white p-6 shadow-lg duration-200 rounded-lg;
+  }
+  
+  &__header {
+    @apply flex flex-col space-y-1.5 text-center sm:text-left;
+  }
+  
+  &__title {
+    @apply text-lg font-semibold leading-none tracking-tight;
+  }
+  
+  &__description {
+    @apply text-sm text-boss-secondary;
+  }
+  
+  &__footer {
+    @apply flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2;
+  }
+} 
