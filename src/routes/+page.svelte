@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { testConnection } from "$lib/supabase.js";
   import { getTopPriorityTasks, debugAllTasks } from "$lib/taskService.js";
+  import ChatInterface from "$lib/components/ChatInterface.svelte";
 
   let connectionStatus = "Testing...";
   let connectionDetails = "";
@@ -172,45 +173,8 @@
     </div>
   </div>
 
-  <!-- Chat Interface Section -->
-  <div class="bg-white rounded-lg shadow-sm border">
-    <div class="p-6 border-b">
-      <h3 class="text-2xl font-semibold">Chat with Carole</h3>
-      <p class="text-sm text-gray-600">
-        Get help with your tasks and priorities
-      </p>
-    </div>
-    <div class="p-6">
-      <div class="flex flex-col h-full bg-white rounded-lg border shadow-sm">
-        <div class="flex-1 p-4 overflow-y-auto space-y-4 min-h-[200px]">
-          <div class="flex gap-3 justify-start">
-            <div
-              class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800"
-            >
-              Hello! I'm Carole, your AI assistant. How can I help you manage
-              your tasks today?
-            </div>
-          </div>
-        </div>
-        <div class="p-4 border-t bg-gray-50 rounded-b-lg">
-          <div class="flex gap-2">
-            <input
-              bind:value={chatMessage}
-              placeholder="Type your message..."
-              class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-            />
-            <button
-              on:click={handleSendMessage}
-              disabled={!chatMessage.trim()}
-              class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- AI Chat Interface Section -->
+  <ChatInterface />
 
   <!-- Quiz Section (Placeholder) -->
   <div class="bg-white rounded-lg shadow-sm border">
