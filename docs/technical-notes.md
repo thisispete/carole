@@ -56,6 +56,41 @@ export default defineConfig({
 });
 ```
 
+## AI Task Tools Architecture (Phase 2 - Upcoming)
+
+### Overview
+
+The next major implementation phase focuses on giving the AI comprehensive task management capabilities through a robust tool system.
+
+**Key Components:**
+
+- **AI Task Tools Interface**: Functions the AI can call to manage tasks
+- **Tool Execution Engine**: Orchestrates AI tool calls with user feedback
+- **Intent Recognition**: Maps natural language to specific task operations
+- **Task Intelligence**: Advanced analysis and optimization capabilities
+- **AI Context System**: Rich awareness of all task data and patterns
+
+**Implementation Files** (Phase 2):
+
+```
+src/lib/
+├── aiTaskTools.ts         # Core AI tool functions
+├── aiToolExecutor.ts      # Tool execution engine
+├── intentRecognizer.ts    # Natural language intent parsing
+├── taskIntelligence.ts    # Task analysis and optimization
+├── aiContext.ts           # Rich AI context system
+└── databricksService.ts   # Enhanced with tool calling
+```
+
+**Expected Capabilities:**
+
+- "Mark the website task as done" → AI finds task and updates status
+- "What should I work on?" → AI analyzes all tasks and suggests priorities
+- "I'm working on the database" → AI updates task status to in_progress
+- AI proactively suggests task optimizations and patterns
+
+**Technical Documentation**: See `docs/ai-task-tools-architecture.md` for complete specifications.
+
 ## Build System
 
 ### Dependencies (Current)

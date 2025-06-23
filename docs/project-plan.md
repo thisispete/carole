@@ -22,7 +22,6 @@ This document breaks down the development of Carole into manageable phases and t
 
 ## Phase 1: Foundation & MVP ✅ **COMPLETED**
 
-**Timeline:** Week 1 ✅ **DONE**  
 **Status:** All objectives achieved
 
 ### Core Infrastructure ✅
@@ -66,41 +65,72 @@ This document breaks down the development of Carole into manageable phases and t
 
 ---
 
-## Phase 2: AI Integration & Chat 🔄 **READY TO START**
+## Phase 2: AI Task Tools & Core Integration 🔄 **READY TO START**
 
-**Timeline:** Week 2-3  
 **Status:** Foundation complete, ready to begin
 
-### AI Chat Interface
+### AI Task Tools System
 
-- [ ] Basic chat UI component
-- [ ] Message persistence and history
-- [ ] Integration with company LLM service (Bedrock/Databricks)
-- [ ] Context-aware responses about tasks
+- [ ] **Core Task Tools Interface**
+
+  - Design comprehensive AI task tools (create, update, delete, analyze)
+  - Build tool execution engine for AI function calls
+  - Implement natural language intent recognition
+  - Create confirmation system for user approval of actions
+
+- [ ] **Task Intelligence Features**
+  - Task analysis tools (themes, blockers, optimization suggestions)
+  - Similar task finding and clustering
+  - Priority optimization algorithms
+  - Dependency detection and management
+
+### Enhanced AI Service Integration
+
+- [ ] **AI Context System**
+
+  - Build rich context awareness (all tasks, patterns, user preferences)
+  - Real-time task state synchronization for AI
+  - Context-aware conversation management
+  - Task-focused conversation threads
+
+- [ ] **Tool-Enabled Chat Interface**
+  - Natural language task operations ("mark the website task as done")
+  - AI explanation of actions taken
+  - Confirmation prompts for significant changes
+  - Real-time task updates with AI narration
 
 ### Smart Task Operations
 
-- [ ] Natural language task creation
-- [ ] AI-powered task suggestions
-- [ ] Smart priority recommendations
-- [ ] Contextual task updates
+- [ ] **Natural Language Task Management**
 
-### Vector Database Integration
+  - Create tasks from conversational input
+  - Update task fields through natural language
+  - Status changes via conversation ("I'm working on X")
+  - Priority adjustments based on context
 
-- [ ] Task embeddings for semantic search
-- [ ] Conversation memory storage
-- [ ] Pattern recognition setup
-- [ ] Similarity-based task clustering
+- [ ] **Proactive Task Intelligence**
+  - AI-powered task suggestions based on current state
+  - Blocker identification and resolution suggestions
+  - Task clustering and project detection
+  - Optimization recommendations
 
-**Ready to implement:** AI chat interface with existing task system
+**Deliverable**: AI assistant with full task management capabilities and intelligent analysis
 
 ---
 
-## Phase 3: AI Intelligence & Vector Storage
+## Phase 3: AI Chat Interface & Vector Integration 🔄 **NEXT**
 
-**Goal**: Add vector database and make AI proactive and contextual
+**Status:** Requires Phase 2 completion
 
-### 3.1 Vector Database Setup
+### Advanced Chat Interface
+
+- [ ] **Enhanced Chat UI Component**
+  - Tool result display and confirmation interfaces
+  - Task-specific chat contexts
+  - Conversation history with task actions
+  - Multi-threaded conversations (global + task-specific)
+
+### Vector Database Integration
 
 - [ ] **Supabase pgvector Configuration**
 
@@ -110,14 +140,27 @@ This document breaks down the development of Carole into manageable phases and t
   - Test vector search functionality
 
 - [ ] **Conversation Memory**
-  - Store all chat messages
+
+  - Store all chat messages with embeddings
   - Generate embeddings for conversations
-  - Implement semantic search
-  - Conversation context retrieval
+  - Implement semantic search across chat history
+  - Conversation context retrieval for AI
 
-**Deliverable**: All conversations stored and searchable
+- [ ] **Task Context Embeddings**
+  - Task embeddings for semantic search
+  - Pattern recognition setup
+  - Similarity-based task clustering using vectors
+  - Project detection through semantic similarity
 
-### 3.2 Proactive AI Behavior & Smart Priority Logic
+**Deliverable**: Advanced chat with full conversation memory and semantic task understanding
+
+---
+
+## Phase 4: AI Intelligence & Advanced Vector Storage
+
+**Goal**: Add advanced vector database features and make AI proactive and contextual
+
+### 4.1 Proactive AI Behavior & Smart Priority Logic
 
 - [ ] **Smart Priority System**
 
@@ -134,17 +177,17 @@ This document breaks down the development of Carole into manageable phases and t
 
 **Deliverable**: AI proactively suggests priorities and optimizations
 
-### 3.3 Enhanced Task Intelligence & Dynamic Project Detection
+### 4.2 Enhanced Task Intelligence & Dynamic Project Detection
 
-- [ ] **Task Context Understanding**
+- [ ] **Advanced Task Context Understanding**
 
-  - Natural language task parsing
-  - Automatic task categorization
+  - Natural language task parsing with vector similarity
+  - Automatic task categorization using embeddings
   - People/healthcare detection for priority boosts
-  - Task similarity detection using vectors
+  - Task similarity detection using vector search
 
 - [ ] **Dynamic Project Detection & Goal Pattern Recognition**
-  - Automatic project clustering from task patterns
+  - Automatic project clustering from task patterns using vectors
   - Goal pattern identification ("lots of house tasks")
   - Dynamic project button generation for Task Browser
   - Project-based filtering and organization
@@ -154,11 +197,11 @@ This document breaks down the development of Carole into manageable phases and t
 
 ---
 
-## Phase 3: Advanced Features & Dependencies
+## Phase 5: Advanced Features & Dependencies
 
 **Goal**: Implement complex task relationships and advanced AI features
 
-### 3.1 Goal Coaching System & Dependency Management
+### 5.1 Goal Coaching System & Dependency Management
 
 - [ ] **Goal Data Model & Storage**
 
@@ -182,7 +225,7 @@ This document breaks down the development of Carole into manageable phases and t
 
 **Deliverable**: Full goal coaching system with dependency tracking
 
-### 3.2 Rapid-Fire Quiz Interface with Optimization Learning
+### 5.2 Rapid-Fire Quiz Interface with Optimization Learning
 
 - [ ] **Quiz UI Components**
 
@@ -199,7 +242,7 @@ This document breaks down the development of Carole into manageable phases and t
 
 **Deliverable**: Smart quiz system that learns user preferences and gets better over time
 
-### 3.3 Deep Personalization & Goal-Aware AI
+### 5.3 Deep Personalization & Goal-Aware AI
 
 - [ ] **Goal-Aware Priority System**
 
@@ -218,11 +261,11 @@ This document breaks down the development of Carole into manageable phases and t
 
 ---
 
-## Phase 4: Polish & Advanced Learning
+## Phase 6: Polish & Advanced Learning
 
 **Goal**: Optimize performance, improve UX, and explore advanced vector DB features
 
-### 4.1 Performance Optimization
+### 6.1 Performance Optimization
 
 - [ ] **Query Optimization**
 
@@ -239,7 +282,7 @@ This document breaks down the development of Carole into manageable phases and t
 
 **Deliverable**: Fast, polished user experience
 
-### 4.2 Advanced Vector Features & Task Optimization
+### 6.2 Advanced Vector Features & Task Optimization
 
 - [ ] **Automatic Dependency Discovery**
 
@@ -256,7 +299,7 @@ This document breaks down the development of Carole into manageable phases and t
 
 **Deliverable**: AI that automatically optimizes task organization and sequencing
 
-### 4.3 Real-World Usage & Iteration
+### 6.3 Real-World Usage & Iteration
 
 - [ ] **Personal Usage Testing**
 
