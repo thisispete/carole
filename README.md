@@ -1,12 +1,12 @@
 # Carole AI Personal Assistant
 
-**Status:** Phase 3 Complete ✅ | AI Task Tools Active 🛠️ | Intelligent Task Management 🧠
+**Status:** Phase 2.5 - Critical AI Fixes Needed 🚨 | Database Working ✅ | AI Integration Issues ⚠️
 
-A truly intelligent AI assistant with comprehensive task management capabilities, natural language processing, and proactive task intelligence. Features complete integration with Block's Databricks platform and sophisticated AI tool system.
+An AI personal assistant for intelligent task management with natural language processing. Currently has a solid foundation with working database operations, but needs critical fixes to AI execution quality before being production-ready.
 
-## 🎯 **Current Status (Phase 3 Complete - AI Task Tools & Core Integration)**
+## 🎯 **Current Status (Phase 2.5 - Critical AI Fixes Needed)**
 
-### ✅ **Working Features**
+### ✅ **What's Actually Working**
 
 **🗄️ Real Database Integration:**
 
@@ -16,21 +16,21 @@ A truly intelligent AI assistant with comprehensive task management capabilities
 - **Rich Task Data**: Tags, locations, priority (0-10), difficulty, time estimates
 - **Row Level Security**: User isolation and secure data access
 
-**🛠️ AI Task Tools System:**
+**🛠️ AI Task Tools System (WITH CRITICAL ISSUES):**
 
-- **Comprehensive Task Operations**: AI can create, update, delete, and analyze tasks through natural language
-- **Intent Recognition**: AI understands commands like "mark website task as done" and executes automatically
-- **Task Intelligence**: Advanced analysis with theme extraction, blocker identification, and optimization suggestions
-- **Context-Aware AI**: Rich awareness of all tasks, patterns, priorities, and workflow state
-- **Tool Execution Engine**: Sophisticated orchestration of AI actions with user feedback
+- **Basic Task Operations**: AI can create tasks, but titles are broken (copies full prompts)
+- **Intent Recognition**: AI understands commands but execution often fails
+- **Status Updates**: AI claims success but database updates don't actually happen
+- **Context Issues**: "Make that high priority" doesn't work - no conversation memory
+- **Tool Pipeline**: Framework exists but needs quality fixes
 
-**🤖 Advanced AI Integration:**
+**🤖 AI Integration (WORKING):**
 
-- **Block Databricks**: Live integration with Claude 3.5 Sonnet, GPT-4o, Llama 3.1 405B
-- **Multi-Model Support**: Switch between AI models in real-time
-- **Natural Language Processing**: AI interprets intent and executes appropriate task operations
-- **Smart Analysis**: AI provides personalized recommendations based on complete task context
-- **Proactive Intelligence**: AI suggests optimizations, identifies patterns, and guides productivity
+- **Block Databricks**: Live integration with Claude 3.5 Sonnet, GPT-4o, Llama 3.1 405B ✅
+- **Multi-Model Support**: Switch between AI models in real-time ✅
+- **Natural Language Processing**: AI interprets intent well, but execution is broken ⚠️
+- **Conversational Quality**: AI responses are natural and helpful ✅
+- **Connection Status**: Real-time connectivity indicators ✅
 
 **🎨 Modern UI:**
 
@@ -40,15 +40,18 @@ A truly intelligent AI assistant with comprehensive task management capabilities
 - **Priority Dashboard**: Top 3 tasks with intelligent sorting
 - **Responsive Design**: BOSS UI design system with Tailwind CSS
 
-### 🚀 **Next Phase: Vector Integration & Advanced Learning**
+### 🚨 **IMMEDIATE PRIORITY: Critical AI Fixes**
 
-**Phase 4: AI Chat Interface & Vector Integration** - Coming next:
+**Phase 2.5: Fix AI Execution Quality** - Must complete before Phase 3:
 
-- **🧮 Vector Database**: Semantic search and conversation memory with pgvector
-- **📚 Advanced Context**: Long-term conversation history and pattern learning
-- **🎯 Semantic Task Clustering**: AI groups related tasks using vector similarity
-- **💡 Proactive Suggestions**: AI learns your preferences and suggests improvements
-- **🔍 Intelligent Search**: Find tasks and conversations by semantic meaning, not just keywords
+- **🔧 Title Extraction**: Fix AI copying full prompts as task titles
+- **✅ Status Updates**: Make AI status changes actually update the database
+- **🧠 Context Tracking**: Enable "Make that high priority" to work within conversations
+- **🎯 Truthful Responses**: Stop AI from claiming success when operations fail
+
+**Evidence**: Database operations work perfectly when called directly, but AI integration has quality issues.
+
+**Ready for Implementation**: Complete action plan available in `docs/ai-fixes-implementation-plan.md`
 
 ### 🏗️ **Architecture**
 
@@ -108,37 +111,46 @@ npm install
 
 Visit `http://localhost:5173` and start chatting with your AI assistant!
 
-## 🤖 **AI Task Tools in Action**
+## 🤖 **Current AI Behavior (Issues Identified)**
 
-**Natural Language Task Management:**
+**What You'll Experience:**
 
-- **"Create a task to review the quarterly budget"** → AI creates task with appropriate priority and tags
-- **"Mark the website redesign task as done"** → AI finds the task and completes it with celebration
-- **"What should I work on today?"** → AI analyzes all tasks and provides personalized recommendations
-- **"Show me my blocked tasks"** → AI searches and displays blocked tasks with unblocking suggestions
-- **"Find all tasks related to the marketing project"** → AI performs intelligent search across task content
+- **"Create a task to review the quarterly budget"** → Creates task titled "create a task to review the quarterly budget" ❌
+- **"Mark the website redesign task as done"** → AI says "marked as done!" but task stays "todo" ❌
+- **"What should I work on today?"** → AI gives great advice based on real task data ✅
+- **"Make that high priority"** → AI creates new task instead of updating previous one ❌
 
-**Intelligent Analysis:**
+**Good Conversational AI:**
 
-- **Task Themes**: AI automatically identifies common themes across your tasks
-- **Blocker Detection**: AI identifies and suggests solutions for blocked tasks
-- **Priority Optimization**: AI recommends priority adjustments based on context
-- **Focus Guidance**: AI suggests what to work on based on your current task state
-- **Progress Insights**: AI celebrates completions and tracks your productivity patterns
+- **Natural Responses**: AI provides helpful, contextual responses ✅
+- **Intent Recognition**: AI understands what you want to do ✅
+- **Task Awareness**: AI can see and analyze your actual tasks ✅
+- **Multi-Model Support**: Switch between Claude, GPT-4o, Llama ✅
 
-**Smart Conversations:**
+**Critical Issues:**
 
-- AI remembers your task context throughout conversations
-- Provides contextual advice based on your complete task landscape
-- Explains actions taken and reasoning behind recommendations
-- Suggests task groupings and workflow optimizations
+- **Title Extraction Broken**: Copies full prompts instead of meaningful titles
+- **Status Updates Fake**: Claims success but database unchanged
+- **No Context Memory**: Doesn't remember "that task" from previous message
+- **Truthfulness Issues**: Says operations succeeded when they failed
+
+**Ready to Fix**: All issues identified with technical solutions in docs.
 
 ## 📚 **Documentation**
 
-- **[Databricks Setup Guide](DATABRICKS_SETUP_GUIDE.md)** - Complete AI integration setup
-- **[Database Schema](DATABASE_SCHEMA_FINALIZED.md)** - Finalized table structures
-- **[Setup Instructions](SETUP_INSTRUCTIONS.md)** - Detailed environment setup
-- **[Changelog](CHANGELOG.md)** - Development progress and changes
+**🚨 IMMEDIATE PRIORITY:**
+
+- **[AI Fixes Implementation Plan](docs/ai-fixes-implementation-plan.md)** - Complete action plan to fix critical issues
+
+**Setup & Development:**
+
+- **[Development Setup](docs/development-setup.md)** - Environment configuration with Databricks setup
+- **[Database Schema](docs/database-schema.md)** - Complete database design
+- **[Requirements](docs/requirements.md)** - Full feature specifications
+
+**Complete Documentation:**
+
+- **[Documentation Index](docs/docs-index.md)** - Full navigation of all docs
 
 ## 🎯 **Learning Goals Achieved**
 

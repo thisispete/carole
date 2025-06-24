@@ -140,9 +140,54 @@ This document breaks down the development of Carole into manageable phases and t
 
 ---
 
+## Phase 2.5: Critical AI Intelligence Gaps 🚨 **IMMEDIATE PRIORITY**
+
+**Status:** Testing revealed significant gaps in documented "complete" functionality - must address before Phase 3
+
+### Critical Memory & Context Fixes
+
+- [ ] **Persistent Conversation Memory**
+
+  - Store chat history in database (conversations table)
+  - Cross-session conversation retrieval and context
+  - User preference learning and retention
+  - Session-based conversation threading
+
+- [ ] **Enhanced Context Awareness**
+  - Improved within-session context tracking
+  - Better task reference resolution ("make that high priority")
+  - Conversation state management beyond current chat
+  - Context-aware clarification questions
+
+### AI Intelligence Reality Gaps
+
+- [ ] **Improved Intent Recognition**
+
+  - Better handling of ambiguous requests with clarification
+  - Multi-turn conversation support for complex requests
+  - Enhanced natural language variation handling
+  - Intent confidence calibration and user feedback loops
+
+- [ ] **Smart Clarification System**
+
+  - Interactive clarification for ambiguous requests
+  - Context-aware follow-up questions
+  - Multi-step task creation workflows
+  - User preference learning from clarifications
+
+- [ ] **Proactive AI Behavior**
+  - Task analysis and optimization suggestions
+  - Proactive insights ("You have 3 overdue tasks")
+  - Pattern recognition and user workflow optimization
+  - Contextual task grouping and priority suggestions
+
+**Deliverable**: AI that truly feels "smart and proactive" as documented
+
+---
+
 ## Phase 3: AI Chat Interface & Vector Integration 🔄 **NEXT PRIORITY**
 
-**Status:** Ready to begin - builds on completed Phase 2 foundation
+**Status:** Ready to begin after Phase 2.5 gaps are addressed
 
 ### Advanced Chat Interface
 

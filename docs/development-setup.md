@@ -57,9 +57,9 @@ cp .env.example .env.local
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
 
-# Databricks AI Configuration
-VITE_DATABRICKS_HOST=https://databricks.internal.block.xyz
-VITE_DATABRICKS_TOKEN=your_databricks_pat_token
+# Databricks AI Configuration (Block Internal)
+VITE_DATABRICKS_HOST=https://block-lakehouse-production.cloud.databricks.com
+VITE_DATABRICKS_TOKEN=your_databricks_pat_token  # See Databricks Setup section below
 VITE_DATABRICKS_ENV=development  # or 'production'
 VITE_DEFAULT_AI_MODEL=claude-3-5-sonnet
 
@@ -77,6 +77,45 @@ The database is already set up and configured. No additional database setup is r
 - ✅ RLS policies configured
 - ✅ Indexes for performance
 - ✅ Sample data available for testing
+
+### 4. Databricks AI Setup (Block Internal)
+
+**Status: ✅ WORKING** - Successfully integrated with PAT authentication
+
+#### Get Your Personal Access Token
+
+1. **Access Block Databricks**: Navigate to `https://block-lakehouse-production.cloud.databricks.com`
+2. **Log in** with your Block SSO credentials
+3. **Generate PAT Token**:
+   - Click your username (top right) → **Settings**
+   - Click **Developer**
+   - Next to **Access tokens**, click **Manage**
+   - Click **Generate new token**
+   - **Comment**: "Carole AI Assistant Local Development"
+   - **Lifetime**: 90 days (or your preference)
+   - **Copy the token** - save it securely!
+
+#### Development vs Production Mode
+
+**Development Mode** (Recommended for testing):
+
+```bash
+VITE_DATABRICKS_ENV=development
+# No PAT token required - uses simulated responses
+```
+
+**Production Mode** (Real AI):
+
+```bash
+VITE_DATABRICKS_ENV=production
+VITE_DATABRICKS_TOKEN=dapi-your-actual-token-here
+```
+
+#### Available AI Models
+
+- **Claude 3.5 Sonnet**: Most capable for complex reasoning
+- **GPT-4o**: OpenAI's multimodal model
+- **Llama 3.1 405B**: Meta's largest open model
 
 ---
 
