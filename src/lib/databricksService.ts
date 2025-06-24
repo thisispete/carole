@@ -75,8 +75,19 @@ class DatabricksService {
         "https://databricks.internal.block.xyz";
 
       console.log("🤖 Databricks Service: Initializing...");
-      console.log("🔗 Base URL:", this.baseUrl);
-      console.log("🔧 Mode:", isProduction ? "Production" : "Development");
+      console.log(`🔗 Base URL: ${this.baseUrl}`);
+      console.log(
+        `🔧 Environment: ${import.meta.env.VITE_DATABRICKS_ENV || "undefined"}`
+      );
+      console.log(`🏭 Production Mode: ${isProduction}`);
+      console.log(
+        `🔑 Token Present: ${!!import.meta.env.VITE_DATABRICKS_TOKEN}`
+      );
+      console.log(
+        `🎯 Default Model: ${
+          import.meta.env.VITE_DEFAULT_AI_MODEL || "claude-3-5-sonnet"
+        }`
+      );
 
       // Test connection to Databricks
       const connectionTest = await this.testConnection();
@@ -84,9 +95,15 @@ class DatabricksService {
       if (connectionTest.success) {
         this.initialized = true;
         console.log("✅ Databricks: Connected successfully");
+        console.log(
+          `📊 Available models: ${
+            connectionTest.models?.join(", ") || "unknown"
+          }`
+        );
         return true;
       } else {
         console.error("❌ Databricks: Connection failed", connectionTest.error);
+        console.error(`📋 Error details: ${connectionTest.message}`);
         return false;
       }
     } catch (error) {
@@ -101,7 +118,7 @@ class DatabricksService {
    */
   async testConnection(): Promise<ConnectionResult> {
     try {
-      console.log("🔍 Testing Databricks connection...");
+      console.log("🔍 Testing Databricks AI connection...");
 
       const token = import.meta.env.VITE_DATABRICKS_TOKEN;
 
@@ -113,33 +130,79 @@ class DatabricksService {
         };
       }
 
-      const response = await fetch("/api/databricks/api/2.0/clusters/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      // Test the actual AI endpoint that we use, not just the clusters endpoint
+      const testMessage = {
+        messages: [{ role: "user", content: "test" }],
+        max_tokens: 10,
+        temperature: 0.1,
+      };
+
+      const startTime = Date.now();
+      const response = await fetch(
+        "/api/databricks/serving-endpoints/claude-3-5-sonnet/invocations",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(testMessage),
+        }
+      );
+      const responseTime = Date.now() - startTime;
+
+      console.log(`🔍 Connection test completed in ${responseTime}ms`);
 
       if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Databricks connection successful");
+        console.log(`⚡ Response time: ${responseTime}ms`);
+        console.log(
+          `📊 Model responding: ${data.model || "claude-3-5-sonnet"}`
+        );
+
         return {
           success: true,
-          message: "Databricks connection verified",
+          message: `Databricks AI service is available (${responseTime}ms response time)`,
           models: ["claude-3-5-sonnet", "gpt-4o", "llama-3.1-405b"],
         };
       } else {
+        const errorText = await response.text();
+        console.error(
+          `🔍 AI endpoint test failed (${responseTime}ms):`,
+          response.status,
+          errorText
+        );
+
+        // Parse the error to provide better user messaging
+        let userMessage = `AI service is temporarily unavailable (HTTP ${response.status})`;
+        if (response.status === 503) {
+          userMessage = "AI service is temporarily down for maintenance";
+        } else if (response.status === 429) {
+          userMessage =
+            "AI service is experiencing high load - retries will help";
+        } else if (response.status === 401 || response.status === 403) {
+          userMessage = "AI service authentication failed";
+        } else if (response.status >= 500) {
+          userMessage = `AI service server error (${response.status}) - intermittent issue`;
+        }
+
         return {
           success: false,
-          error: `HTTP ${response.status}: ${response.statusText}`,
-          message: "Failed to connect to Databricks - check your PAT token",
+          error: `HTTP ${response.status}: ${response.statusText} (${responseTime}ms)`,
+          message: userMessage,
         };
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
+      console.error("🔍 Connection test failed with exception:", errorMessage);
+
       return {
         success: false,
         error: errorMessage,
-        message: "Failed to connect to Databricks",
+        message:
+          "Failed to connect to AI service - network or configuration issue",
       };
     }
   }
@@ -208,6 +271,141 @@ class DatabricksService {
   }
 
   /**
+   * Send message directly to AI for intent analysis (bypasses intent analysis to prevent circular calls)
+   */
+  async sendMessageForIntentAnalysis(
+    message: string,
+    model: string = "claude-3-5-sonnet"
+  ): Promise<AIResponse> {
+    return this.sendMessageForIntentAnalysisWithRetry(message, model, 2);
+  }
+
+  /**
+   * Send message for intent analysis with retry logic
+   * @private
+   */
+  private async sendMessageForIntentAnalysisWithRetry(
+    message: string,
+    model: string = "claude-3-5-sonnet",
+    maxRetries: number = 2
+  ): Promise<AIResponse> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(
+          `🤖 Direct AI call for intent analysis (attempt ${attempt}/${maxRetries}) - no tools, no context`
+        );
+
+        const isProduction =
+          import.meta.env.VITE_DATABRICKS_ENV === "production";
+
+        if (isProduction) {
+          // Production: Send to actual Databricks
+          const token = import.meta.env.VITE_DATABRICKS_TOKEN;
+
+          if (!token) {
+            throw new Error(
+              "Missing VITE_DATABRICKS_TOKEN environment variable"
+            );
+          }
+
+          const requestBody = {
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a helpful AI assistant. Respond with JSON when requested.",
+              },
+              { role: "user", content: message },
+            ],
+            max_tokens: 1000,
+            temperature: 0.1,
+          };
+
+          const response = await fetch(
+            `/api/databricks/serving-endpoints/${model}/invocations`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(
+              `❌ Databricks API Error (intent analysis attempt ${attempt}):`,
+              response.status,
+              errorText
+            );
+
+            // Determine if we should retry
+            const shouldRetry = this.shouldRetryError(response.status);
+
+            if (shouldRetry && attempt < maxRetries) {
+              const error = new Error(
+                `Databricks API error: ${response.status} ${response.statusText}`
+              );
+              lastError = error;
+              console.log(`🔄 Intent analysis retry in ${attempt * 500}ms...`);
+              await this.sleep(attempt * 500); // Shorter delays for intent analysis
+              continue;
+            } else {
+              throw new Error(
+                `Databricks API error: ${response.status} ${response.statusText}`
+              );
+            }
+          }
+
+          const data = await response.json();
+          const aiResponse =
+            data.choices?.[0]?.message?.content || "No response from AI";
+
+          return {
+            success: true,
+            response: aiResponse,
+            model: model,
+            usage: data.usage,
+          };
+        } else {
+          // Development: AI intent analysis not available - return honest error
+          throw new Error(
+            "AI intent analysis requires production environment. Please rephrase your request more clearly and I'll try to help."
+          );
+        }
+      } catch (error) {
+        console.error(
+          `❌ Direct AI call for intent analysis failed (attempt ${attempt}):`,
+          error
+        );
+        lastError = error instanceof Error ? error : new Error("Unknown error");
+
+        // If this was the last attempt or error is not retryable, break out
+        if (attempt === maxRetries || !this.isRetryableError(lastError)) {
+          break;
+        }
+
+        // Wait before retrying
+        console.log(
+          `🔄 Waiting ${attempt * 500}ms before intent analysis retry...`
+        );
+        await this.sleep(attempt * 500);
+      }
+    }
+
+    // If we get here, all retries failed
+    return {
+      success: false,
+      error: lastError?.message || "Unknown error",
+      toolResults: [],
+    };
+  }
+
+  /**
    * Send message to AI with comprehensive task management capabilities
    */
   async sendMessage(
@@ -219,164 +417,241 @@ class DatabricksService {
       await this.initialize();
     }
 
-    try {
-      console.log(
-        "🤖 Sending message to Databricks AI:",
-        message.slice(0, 50) + "..."
-      );
+    return this.sendMessageWithRetry(message, context, model, 3);
+  }
 
-      // Build context and analyze intent with AI-driven system
-      const aiContext = await buildAIContext();
-      const toolExecutor = new AIToolExecutor();
-      const intents = await toolExecutor.analyzeIntent(message, context);
-      console.log("🎯 User intents detected:", intents);
+  /**
+   * Send message with retry logic for resilience
+   * @private
+   */
+  private async sendMessageWithRetry(
+    message: string,
+    context: Message[] = [],
+    model: string = "claude-3-5-sonnet",
+    maxRetries: number = 3
+  ): Promise<AIResponse> {
+    let lastError: Error | null = null;
 
-      if (isProduction) {
-        // Production: Send to actual Databricks
-        const token = import.meta.env.VITE_DATABRICKS_TOKEN;
-
-        if (!token) {
-          throw new Error("Missing VITE_DATABRICKS_TOKEN environment variable");
-        }
-
-        // Enhanced system prompt with tools and context
-        const systemPrompt = this.buildSystemPromptWithTools(aiContext);
-
-        const requestBody = {
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...context,
-            { role: "user", content: message },
-          ],
-          max_tokens: 1000,
-          temperature: 0.7,
-        };
-
-        const response = await fetch(
-          `/api/databricks/serving-endpoints/${model}/invocations`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-          }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(
+          `🤖 Sending message to Databricks AI (attempt ${attempt}/${maxRetries}):`,
+          message.slice(0, 50) + "..."
         );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Databricks API Error:", response.status, errorText);
+        // Build context and analyze intent with AI-driven system
+        console.log("🧠 Building AI context...");
+        const aiContext = await buildAIContext();
 
-          if (response.status === 503) {
+        console.log("🤖 Creating tool executor...");
+        const toolExecutor = new AIToolExecutor();
+
+        console.log("🎯 Analyzing intent...");
+        const intents = await toolExecutor.analyzeIntent(message, context);
+        console.log("✅ User intents detected:", intents);
+
+        if (isProduction) {
+          // Production: Send to actual Databricks with retry logic
+          const token = import.meta.env.VITE_DATABRICKS_TOKEN;
+
+          if (!token) {
             throw new Error(
-              "Databricks service is temporarily unavailable. Please try again later."
-            );
-          } else if (response.status === 401) {
-            throw new Error(
-              "Authentication failed. Please check your Databricks token."
-            );
-          } else if (response.status === 403) {
-            throw new Error(
-              "Access denied. Please check your Databricks permissions."
-            );
-          } else {
-            throw new Error(
-              `Databricks API error: ${response.status} ${response.statusText}`
+              "Missing VITE_DATABRICKS_TOKEN environment variable"
             );
           }
-        }
 
-        const data = await response.json();
-        const aiResponse =
-          data.choices?.[0]?.message?.content || "No response from AI";
+          // Enhanced system prompt with tools and context
+          const systemPrompt = this.buildSystemPromptWithTools(aiContext);
 
-        // Execute intent-based tools
-        const toolResults = await this.executeIntentBasedTools(intents);
+          const requestBody = {
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...context,
+              { role: "user", content: message },
+            ],
+            max_tokens: 1000,
+            temperature: 0.7,
+          };
 
-        return {
-          success: true,
-          response: aiResponse,
-          model: model,
-          usage: data.usage,
-          toolResults: toolResults,
-          context: aiContext,
-        };
-      } else {
-        // Development: Use local AI responses with real tool execution
-        console.log(
-          "🔧 Development mode: Using local AI responses with real tools"
-        );
+          const response = await fetch(
+            `/api/databricks/serving-endpoints/${model}/invocations`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            }
+          );
 
-        // Execute intent-based tools (this part is real even in development)
-        const toolResults = await this.executeIntentBasedTools(intents);
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(
+              `❌ Databricks API Error (attempt ${attempt}):`,
+              response.status,
+              errorText
+            );
 
-        // Generate contextual response based on actual actions and data WITH conversation history
-        const contextualResponse = this.generateContextualResponseWithTools(
-          message,
-          toolResults,
-          aiContext,
-          intents,
-          context // Now passing conversation history!
-        );
+            // Determine if we should retry based on error type
+            const shouldRetry = this.shouldRetryError(response.status);
 
-        return {
-          success: true,
-          response: contextualResponse,
-          model: `${model} (local)`,
-          toolResults: toolResults,
-          context: aiContext,
-        };
-      }
-    } catch (error) {
-      console.error("❌ Databricks sendMessage error:", error);
+            if (response.status === 503) {
+              const error = new Error(
+                attempt === maxRetries
+                  ? "Databricks service is temporarily unavailable. Please try again later."
+                  : "Databricks service temporarily unavailable - retrying..."
+              );
+              if (shouldRetry && attempt < maxRetries) {
+                lastError = error;
+                console.log(`🔄 Retrying in ${attempt * 1000}ms...`);
+                await this.sleep(attempt * 1000); // Exponential backoff
+                continue;
+              } else {
+                throw error;
+              }
+            } else if (response.status === 429) {
+              const error = new Error(
+                attempt === maxRetries
+                  ? "AI service is experiencing high load. Please try again later."
+                  : "Rate limited - retrying..."
+              );
+              if (shouldRetry && attempt < maxRetries) {
+                lastError = error;
+                console.log(
+                  `🔄 Rate limited, retrying in ${attempt * 2000}ms...`
+                );
+                await this.sleep(attempt * 2000); // Longer backoff for rate limits
+                continue;
+              } else {
+                throw error;
+              }
+            } else if (response.status === 401) {
+              throw new Error(
+                "Authentication failed. Please check your Databricks token."
+              );
+            } else if (response.status === 403) {
+              throw new Error(
+                "Access denied. Please check your Databricks permissions."
+              );
+            } else {
+              const error = new Error(
+                `Databricks API error: ${response.status} ${response.statusText}`
+              );
+              if (shouldRetry && attempt < maxRetries) {
+                lastError = error;
+                console.log(`🔄 Retrying after ${response.status} error...`);
+                await this.sleep(attempt * 1000);
+                continue;
+              } else {
+                throw error;
+              }
+            }
+          }
 
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
+          const data = await response.json();
+          const aiResponse =
+            data.choices?.[0]?.message?.content || "No response from AI";
 
-      // If we're in production and getting a service error, fall back to development mode
-      if (
-        isProduction &&
-        (errorMessage.includes("503") ||
-          errorMessage.includes("Service Unavailable"))
-      ) {
-        console.log(
-          "🔄 Falling back to development mode due to service unavailability"
-        );
-
-        try {
-          // Build context and execute tools even in fallback mode
-          const aiContext = await buildAIContext();
-          const toolExecutor = new AIToolExecutor();
-          const intents = await toolExecutor.analyzeIntent(message, context);
+          // Execute intent-based tools
           const toolResults = await this.executeIntentBasedTools(intents);
 
-          const fallbackResponse = this.generateContextualResponseWithTools(
+          return {
+            success: true,
+            response: aiResponse,
+            model: model,
+            usage: data.usage,
+            toolResults: toolResults,
+            context: aiContext,
+          };
+        } else {
+          // Development: Use local AI responses with real tool execution
+          console.log(
+            "🔧 Development mode: Using local AI responses with real tools"
+          );
+
+          // Execute intent-based tools (this part is real even in development)
+          const toolResults = await this.executeIntentBasedTools(intents);
+
+          // Generate contextual response based on actual actions and data WITH conversation history
+          const contextualResponse = this.generateContextualResponseWithTools(
             message,
             toolResults,
             aiContext,
             intents,
-            context // Add conversation history here too
+            context // Now passing conversation history!
           );
 
           return {
             success: true,
-            response: `${fallbackResponse}\n\n*Note: Using local processing due to service unavailability*`,
-            model: `${model} (fallback)`,
+            response: contextualResponse,
+            model: `${model} (local)`,
             toolResults: toolResults,
             context: aiContext,
           };
-        } catch (fallbackError) {
-          console.error("❌ Fallback mode also failed:", fallbackError);
         }
-      }
+      } catch (error) {
+        console.error(
+          `❌ Databricks sendMessage error (attempt ${attempt}):`,
+          error
+        );
+        lastError =
+          error instanceof Error ? error : new Error("Unknown error occurred");
 
-      return {
-        success: false,
-        error: errorMessage,
-        toolResults: [],
-      };
+        // If this was the last attempt or error is not retryable, break out of loop
+        if (attempt === maxRetries || !this.isRetryableError(lastError)) {
+          break;
+        }
+
+        // Wait before retrying
+        console.log(`🔄 Waiting ${attempt * 1000}ms before retry...`);
+        await this.sleep(attempt * 1000);
+      }
     }
+
+    // If we get here, all retries failed
+    const errorMessage = lastError?.message || "Unknown error occurred";
+
+    return {
+      success: false,
+      error: errorMessage,
+      toolResults: [],
+    };
+  }
+
+  /**
+   * Determine if an HTTP status code should trigger a retry
+   * @private
+   */
+  private shouldRetryError(statusCode: number): boolean {
+    // Retry on server errors and rate limiting
+    return statusCode >= 500 || statusCode === 429;
+  }
+
+  /**
+   * Determine if an error is retryable
+   * @private
+   */
+  private isRetryableError(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("temporarily unavailable") ||
+      message.includes("high load") ||
+      message.includes("network") ||
+      message.includes("timeout") ||
+      message.includes("503") ||
+      message.includes("502") ||
+      message.includes("504") ||
+      message.includes("429")
+    );
+  }
+
+  /**
+   * Sleep utility for retry delays
+   * @private
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -500,7 +775,7 @@ Remember: Less is more. Be helpful, not wordy.`;
    * Convert user intent to tool call
    * @private
    */
-  private intentToToolCall(intent: UserIntent): ToolCall | null {
+  private intentToToolCall(intent: Intent): ToolCall | null {
     switch (intent.type) {
       case "create":
         return {
@@ -511,10 +786,10 @@ Remember: Less is more. Be helpful, not wordy.`;
         };
 
       case "complete":
-        if (intent.targetTask) {
+        if (intent.parameters?.target_task_id) {
           return {
             tool: "markTaskComplete",
-            parameters: { taskId: intent.targetTask.id },
+            parameters: { taskId: intent.parameters.target_task_id },
             reasoning: intent.reasoning,
             confidence: intent.confidence,
           };
@@ -522,11 +797,11 @@ Remember: Less is more. Be helpful, not wordy.`;
         break;
 
       case "status_change":
-        if (intent.targetTask && intent.parameters?.status) {
+        if (intent.parameters?.target_task_id && intent.parameters?.status) {
           return {
             tool: "changeTaskStatus",
             parameters: {
-              taskId: intent.targetTask.id,
+              taskId: intent.parameters.target_task_id,
               status: intent.parameters.status,
             },
             reasoning: intent.reasoning,
@@ -536,16 +811,58 @@ Remember: Less is more. Be helpful, not wordy.`;
         break;
 
       case "priority_change":
-        if (intent.targetTask && intent.parameters?.priority !== undefined) {
+        console.log("🔧 Processing priority_change intent:", {
+          target_task_id: intent.parameters?.target_task_id,
+          priority: intent.parameters?.priority,
+          hasTaskId: !!intent.parameters?.target_task_id,
+          hasPriority: intent.parameters?.priority !== undefined,
+        });
+
+        if (
+          intent.parameters?.target_task_id &&
+          intent.parameters?.priority !== undefined
+        ) {
+          console.log("✅ Creating changeTaskPriority tool call");
           return {
             tool: "changeTaskPriority",
             parameters: {
-              taskId: intent.targetTask.id,
+              taskId: intent.parameters.target_task_id,
               priority: intent.parameters.priority,
             },
             reasoning: intent.reasoning,
             confidence: intent.confidence,
           };
+        } else {
+          console.log("❌ Missing required parameters for priority change:", {
+            target_task_id: intent.parameters?.target_task_id,
+            priority: intent.parameters?.priority,
+          });
+        }
+        break;
+
+      case "update":
+        if (intent.parameters?.target_task_id) {
+          console.log(
+            "🔧 Processing general update intent:",
+            intent.parameters
+          );
+
+          // Extract all update parameters except target_task_id
+          const updates = { ...intent.parameters };
+          delete updates.target_task_id;
+          delete updates.context_resolution_confidence;
+
+          return {
+            tool: "updateTask",
+            parameters: {
+              taskId: intent.parameters.target_task_id,
+              ...updates,
+            },
+            reasoning: intent.reasoning,
+            confidence: intent.confidence,
+          };
+        } else {
+          console.log("❌ Missing target_task_id for update intent");
         }
         break;
 

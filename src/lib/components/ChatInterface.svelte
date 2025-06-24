@@ -9,6 +9,14 @@
   let isLoading = false;
   let messagesContainer;
 
+  // Conversation memory for context tracking
+  let conversationContext = {
+    lastCreatedTaskId: null,
+    lastUpdatedTaskId: null,
+    recentTaskIds: [],
+    focusTask: null,
+  };
+
   // Use hardcoded model from environment or default
   const selectedModel =
     import.meta.env.VITE_DEFAULT_AI_MODEL || "claude-3-5-sonnet";
@@ -56,11 +64,16 @@
       }));
 
       // Send to Databricks AI
+      console.log("📤 Sending message to AI:", userMessage);
+      console.log("📝 Context length:", context.length);
+
       const response = await databricksService.sendMessage(
         userMessage,
         context,
         selectedModel
       );
+
+      console.log("📥 AI Response received:", response);
 
       if (response.success && response.response) {
         // Process tool results if present
@@ -88,6 +101,44 @@
               taskChangingTools.includes(action.toolCall?.tool) &&
               action.success
           );
+
+          // Update conversation context with recent task operations
+          toolActions.forEach((action) => {
+            if (action.success && action.taskId) {
+              const tool = action.toolCall?.tool;
+
+              if (tool === "createTask") {
+                conversationContext.lastCreatedTaskId = action.taskId;
+                conversationContext.focusTask = action.taskId;
+                // Add to recent tasks (keep only last 5)
+                conversationContext.recentTaskIds = [
+                  action.taskId,
+                  ...conversationContext.recentTaskIds.filter(
+                    (id) => id !== action.taskId
+                  ),
+                ].slice(0, 5);
+              } else if (
+                tool === "changeTaskStatus" ||
+                tool === "changeTaskPriority" ||
+                tool === "markTaskComplete" ||
+                tool === "updateTask"
+              ) {
+                conversationContext.lastUpdatedTaskId = action.taskId;
+                conversationContext.focusTask = action.taskId;
+                // Add to recent tasks if not already there
+                if (
+                  !conversationContext.recentTaskIds.includes(action.taskId)
+                ) {
+                  conversationContext.recentTaskIds = [
+                    action.taskId,
+                    ...conversationContext.recentTaskIds,
+                  ].slice(0, 5);
+                }
+              }
+            }
+          });
+
+          console.log("🧠 Updated conversation context:", conversationContext);
 
           // Refresh tasks if any task-changing operations were successful
           if (hadTaskChanges) {

@@ -220,6 +220,30 @@ src/
 
 ---
 
+## Debugging Tools
+
+### Connection Monitor
+
+Test Databricks service reliability:
+
+```bash
+# Quick health check (10 tests)
+node test-connection-monitor.js
+
+# Extended monitoring (50 tests, 1s apart)
+node test-connection-monitor.js 50 1000
+
+# Baseline performance check (5 tests, 5s apart)
+node test-connection-monitor.js 5 5000
+```
+
+**Output includes:**
+
+- Success/failure rates
+- Response time statistics
+- Error categorization (503, 429, etc.)
+- Timing patterns
+
 ## Troubleshooting
 
 ### Common Issues
@@ -237,6 +261,14 @@ npm run dev
 - Check Databricks token is valid and has proper permissions
 - Verify VITE_DATABRICKS_HOST points to correct endpoint
 - Ensure network access to Databricks (VPN if required)
+- **Run connection monitor**: `node test-connection-monitor.js` to diagnose
+
+**Intermittent AI failures:**
+
+- Check console logs for retry attempts and timing
+- Use connection monitor to identify patterns
+- Verify environment variables are consistent
+- Look for 503/429 error patterns indicating service issues
 
 **Database connection errors:**
 

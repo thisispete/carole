@@ -67,6 +67,22 @@ export interface AITaskToolResult {
 export class AITaskTools {
   // === CORE TASK OPERATIONS ===
 
+  async getTaskById(taskId: string): Promise<Task | null> {
+    try {
+      const result = await getTasks();
+      if (!result.success) {
+        console.error("Failed to fetch tasks for getTaskById:", result.error);
+        return null;
+      }
+
+      const task = result.data?.find((t) => t.id === taskId);
+      return task || null;
+    } catch (error) {
+      console.error("Error in getTaskById:", error);
+      return null;
+    }
+  }
+
   async searchTasks(query: string): Promise<AITaskToolResult> {
     try {
       const result = await getTasks();
@@ -166,12 +182,146 @@ export class AITaskTools {
       const result = await updateTask(taskId, updates);
 
       if (result.success) {
-        return {
-          success: true,
-          data: result.data,
-          taskId: result.data.id,
-          userMessage: `Updated "${result.data.title}"`,
-        };
+        // Verify the update actually worked by fetching the updated task
+        const verificationResult = await getTasks();
+        if (verificationResult.success) {
+          const updatedTask = verificationResult.data?.find(
+            (t) => t.id === taskId
+          );
+          if (updatedTask) {
+            // Check if all updates were applied
+            let verificationFailed = false;
+            let failedFields: string[] = [];
+
+            // Check each field that was supposed to be updated
+            for (const [key, value] of Object.entries(updates)) {
+              if (key === "updated_at") continue; // Skip timestamp check
+
+              // Handle array fields (context_tags, locations) with deep comparison
+              if (Array.isArray(value) && Array.isArray(updatedTask[key])) {
+                if (
+                  JSON.stringify(value.sort()) !==
+                  JSON.stringify(updatedTask[key].sort())
+                ) {
+                  verificationFailed = true;
+                  failedFields.push(
+                    `${key}: expected [${value.join(", ")}], got [${updatedTask[
+                      key
+                    ].join(", ")}]`
+                  );
+                }
+              }
+              // Handle date fields with normalized comparison
+              else if (key === "due_date" && value && updatedTask[key]) {
+                // Normalize both dates to YYYY-MM-DD format for comparison
+                const expectedDate = new Date(value)
+                  .toISOString()
+                  .split("T")[0];
+                const actualDate = new Date(updatedTask[key])
+                  .toISOString()
+                  .split("T")[0];
+                if (expectedDate !== actualDate) {
+                  verificationFailed = true;
+                  failedFields.push(
+                    `${key}: expected ${expectedDate}, got ${actualDate}`
+                  );
+                }
+              }
+              // Handle scalar fields with standard comparison
+              else if (updatedTask[key] !== value) {
+                verificationFailed = true;
+                failedFields.push(
+                  `${key}: expected ${value}, got ${updatedTask[key]}`
+                );
+              }
+            }
+
+            if (!verificationFailed) {
+              // Success - all updates verified
+              const updateSummary = Object.keys(updates)
+                .filter((k) => k !== "updated_at")
+                .map((k) => {
+                  if (k === "priority") {
+                    const priority = updates[k] as number;
+                    const label =
+                      priority >= 8
+                        ? "🔴 High"
+                        : priority >= 5
+                        ? "🟡 Medium"
+                        : "🟢 Low";
+                    return `priority to ${priority} (${label})`;
+                  }
+                  if (k === "status") {
+                    const statusEmoji =
+                      {
+                        backlog: "📋",
+                        todo: "📝",
+                        in_progress: "🔄",
+                        blocked: "🚫",
+                        done: "✅",
+                      }[updates[k] as string] || "📝";
+                    return `${statusEmoji} status to ${updates[k]}`;
+                  }
+                  if (k === "due_date") {
+                    return `📅 due date to ${updates[k]}`;
+                  }
+                  if (k === "context_tags" && Array.isArray(updates[k])) {
+                    return `🏷️ tags to [${(updates[k] as string[]).join(
+                      ", "
+                    )}]`;
+                  }
+                  if (k === "locations" && Array.isArray(updates[k])) {
+                    return `📍 locations to [${(updates[k] as string[]).join(
+                      ", "
+                    )}]`;
+                  }
+                  if (k === "time_estimate_hours") {
+                    return `⏱️ time estimate to ${updates[k]} hours`;
+                  }
+                  if (k === "difficulty_level") {
+                    return `🎯 difficulty to ${updates[k]}/10`;
+                  }
+                  if (k === "title") {
+                    return `📝 renamed to "${updates[k]}"`;
+                  }
+                  if (k === "description") {
+                    return `📄 description updated`;
+                  }
+                  return `${k} to ${updates[k]}`;
+                })
+                .join(", ");
+
+              return {
+                success: true,
+                data: updatedTask,
+                taskId: updatedTask.id,
+                userMessage: `✅ Updated "${updatedTask.title}" - ${updateSummary}`,
+              };
+            } else {
+              return {
+                success: false,
+                error: "Update verification failed",
+                userMessage: `❌ Update failed verification - ${failedFields.join(
+                  ", "
+                )}`,
+              };
+            }
+          } else {
+            return {
+              success: false,
+              error: "Task not found after update",
+              userMessage: `❌ Task not found after update attempt`,
+            };
+          }
+        } else {
+          // If verification fetch fails, trust the original result but note it
+          return {
+            success: true,
+            data: result.data,
+            taskId: result.data.id,
+            userMessage: `Updated "${result.data.title}" (verification skipped)`,
+          };
+        }
       } else {
         return {
           success: false,
@@ -229,21 +379,52 @@ export class AITaskTools {
       const result = await updateTask(taskId, { status });
 
       if (result.success) {
-        const statusEmoji =
-          {
-            backlog: "📋",
-            todo: "📝",
-            in_progress: "🔄",
-            blocked: "🚫",
-            done: "✅",
-          }[status] || "📝";
+        // Verify the update actually worked by fetching the updated task
+        const verificationResult = await getTasks();
+        if (verificationResult.success) {
+          const updatedTask = verificationResult.data?.find(
+            (t) => t.id === taskId
+          );
+          if (updatedTask && updatedTask.status === status) {
+            const statusEmoji =
+              {
+                backlog: "📋",
+                todo: "📝",
+                in_progress: "🔄",
+                blocked: "🚫",
+                done: "✅",
+              }[status] || "📝";
 
-        return {
-          success: true,
-          data: result.data,
-          taskId: result.data.id,
-          userMessage: `Moved to ${status.replace("_", " ")}`,
-        };
+            return {
+              success: true,
+              data: result.data,
+              taskId: result.data.id,
+              userMessage: `${statusEmoji} Moved to ${status.replace(
+                "_",
+                " "
+              )}`,
+            };
+          } else {
+            return {
+              success: false,
+              error: "Status update verification failed",
+              userMessage: `❌ Status update failed verification - task still shows ${
+                updatedTask?.status || "unknown status"
+              }`,
+            };
+          }
+        } else {
+          // If verification fetch fails, trust the original result but note it
+          return {
+            success: true,
+            data: result.data,
+            taskId: result.data.id,
+            userMessage: `Moved to ${status.replace(
+              "_",
+              " "
+            )} (verification skipped)`,
+          };
+        }
       } else {
         return {
           success: false,
@@ -273,12 +454,43 @@ export class AITaskTools {
       const result = await updateTask(taskId, { priority: validPriority });
 
       if (result.success) {
-        return {
-          success: true,
-          data: result.data,
-          taskId: result.data.id,
-          userMessage: `Set priority to ${validPriority}`,
-        };
+        // Verify the update actually worked by fetching the updated task
+        const verificationResult = await getTasks();
+        if (verificationResult.success) {
+          const updatedTask = verificationResult.data?.find(
+            (t) => t.id === taskId
+          );
+          if (updatedTask && updatedTask.priority === validPriority) {
+            const priorityLabel =
+              validPriority >= 8
+                ? "🔴 High"
+                : validPriority >= 5
+                ? "🟡 Medium"
+                : "🟢 Low";
+            return {
+              success: true,
+              data: result.data,
+              taskId: result.data.id,
+              userMessage: `Set priority to ${validPriority} (${priorityLabel})`,
+            };
+          } else {
+            return {
+              success: false,
+              error: "Priority update verification failed",
+              userMessage: `❌ Priority update failed verification - task still shows priority ${
+                updatedTask?.priority || "unknown"
+              }`,
+            };
+          }
+        } else {
+          // If verification fetch fails, trust the original result but note it
+          return {
+            success: true,
+            data: result.data,
+            taskId: result.data.id,
+            userMessage: `Set priority to ${validPriority} (verification skipped)`,
+          };
+        }
       } else {
         return {
           success: false,
@@ -305,12 +517,37 @@ export class AITaskTools {
       });
 
       if (result.success) {
-        return {
-          success: true,
-          data: result.data,
-          taskId: result.data.id,
-          userMessage: `Completed! 🎉`,
-        };
+        // Verify the update actually worked by fetching the updated task
+        const verificationResult = await getTasks();
+        if (verificationResult.success) {
+          const updatedTask = verificationResult.data?.find(
+            (t) => t.id === taskId
+          );
+          if (updatedTask && updatedTask.status === "done") {
+            return {
+              success: true,
+              data: result.data,
+              taskId: result.data.id,
+              userMessage: `✅ "${updatedTask.title}" completed! 🎉`,
+            };
+          } else {
+            return {
+              success: false,
+              error: "Task completion verification failed",
+              userMessage: `❌ Task completion failed verification - task still shows status: ${
+                updatedTask?.status || "unknown"
+              }`,
+            };
+          }
+        } else {
+          // If verification fetch fails, trust the original result but note it
+          return {
+            success: true,
+            data: result.data,
+            taskId: result.data.id,
+            userMessage: `Completed! 🎉 (verification skipped)`,
+          };
+        }
       } else {
         return {
           success: false,

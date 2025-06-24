@@ -7,8 +7,18 @@
   let connectionIssues = [];
   let isChecking = true;
 
-  onMount(async () => {
-    await checkConnections();
+  onMount(() => {
+    checkConnections();
+
+    // Set up periodic health checks every 30 seconds if there are issues
+    const healthCheckInterval = setInterval(async () => {
+      if (connectionIssues.length > 0) {
+        await checkConnections();
+      }
+    }, 30000);
+
+    // Clean up interval on component destroy
+    return () => clearInterval(healthCheckInterval);
   });
 
   async function checkConnections() {
