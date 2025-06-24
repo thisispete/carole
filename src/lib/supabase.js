@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
+
+
 // These will come from environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -14,7 +16,9 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
-// Test connection function
+
+
+// Test connection function (simplified for RLS disabled)
 export async function testConnection() {
   if (!supabase) {
     console.error('❌ Supabase client not initialized - check environment variables')
@@ -22,8 +26,7 @@ export async function testConnection() {
   }
 
   try {
-    // Simple connection test - try to access the auth service
-    // This works on any Supabase project without requiring specific tables or functions
+    // Simple connection test - just check if we can reach Supabase
     const { data, error } = await supabase.auth.getSession()
     
     if (error) {
@@ -31,8 +34,8 @@ export async function testConnection() {
       return { success: false, error: error.message }
     }
     
-    // Debug: Check if user is authenticated
-    console.log('🔐 Auth session:', data.session ? 'Logged in' : 'Not logged in')
+    // Check if user is authenticated (optional info since RLS is disabled)
+    console.log('🔐 Auth session:', data.session ? 'Logged in' : 'Not logged in (but RLS disabled)')
     if (data.session) {
       console.log('👤 User ID:', data.session.user.id)
     }

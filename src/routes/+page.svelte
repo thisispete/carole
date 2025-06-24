@@ -1,40 +1,37 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { testConnection } from "$lib/supabase.js";
-  import { getTopPriorityTasks, debugAllTasks } from "$lib/taskService.js";
+  import { getTopPriorityTasks } from "$lib/taskService.js";
   import ChatInterface from "$lib/components/ChatInterface.svelte";
+  import ConnectionStatus from "$lib/components/ConnectionStatus.svelte";
 
-  let connectionStatus = "Testing...";
-  let connectionDetails = "";
   let priorityTasks: any[] = [];
   let tasksLoading = true;
   let tasksError = "";
-  let chatMessage = "";
+
+  // Add refresh function
+  function onTaskChange() {
+    console.log("🔄 Refreshing priority tasks...");
+    tasksLoading = true;
+
+    // Add a small delay to ensure database transaction is committed
+    setTimeout(() => {
+      getTopPriorityTasks(3).then((tasksResult) => {
+        if (tasksResult.success) {
+          console.log("📋 Priority tasks refreshed:", tasksResult.data);
+          priorityTasks = tasksResult.data;
+          tasksError = "";
+        } else {
+          tasksError = tasksResult.error || "Unknown error";
+          priorityTasks = [];
+        }
+        tasksLoading = false;
+      });
+    }, 500);
+  }
 
   onMount(async () => {
-    // Test connection
-    const result = await testConnection();
-    if (result.success) {
-      connectionStatus = "✅ Supabase Connected!";
-      connectionDetails = "";
-    } else {
-      connectionStatus = "❌ Connection Failed";
-      connectionDetails = result.error || "Unknown error";
-    }
-
     // Fetch priority tasks
-    const tasksResult = await getTopPriorityTasks(3);
-    if (tasksResult.success) {
-      priorityTasks = tasksResult.data;
-      tasksError = "";
-    } else {
-      tasksError = tasksResult.error || "Unknown error";
-      priorityTasks = [];
-    }
-    tasksLoading = false;
-
-    // Debug: Show all tasks in console
-    await debugAllTasks();
+    await onTaskChange();
   });
 
   function getStatusColor(status: string) {
@@ -46,14 +43,6 @@
       backlog: "#8e8e93",
     };
     return colors[status] || "#007acc";
-  }
-
-  function handleSendMessage() {
-    if (chatMessage.trim()) {
-      // TODO: Implement chat functionality
-      console.log("Sending message:", chatMessage);
-      chatMessage = "";
-    }
   }
 </script>
 
@@ -80,28 +69,8 @@
     </nav>
   </header>
 
-  <!-- Welcome Section -->
-  <div class="bg-white rounded-lg shadow-sm border p-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Carole</h1>
-    <p class="text-gray-600 mb-4">
-      Your AI Personal Assistant &amp; Project Manager
-    </p>
-
-    <div class="flex items-center gap-2">
-      <span
-        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {connectionStatus.includes(
-          '✅'
-        )
-          ? 'bg-green-600 text-white'
-          : 'bg-red-600 text-white'}"
-      >
-        {connectionStatus}
-      </span>
-      {#if connectionDetails}
-        <span class="text-sm text-red-600">({connectionDetails})</span>
-      {/if}
-    </div>
-  </div>
+  <!-- Connection Status -->
+  <ConnectionStatus />
 
   <!-- Priority Dashboard Section -->
   <div class="bg-white rounded-lg shadow-sm border">
@@ -128,7 +97,8 @@
           </div>
         {:else if priorityTasks.length === 0}
           <div class="text-center py-8 text-gray-600">
-            No active tasks found
+            No active tasks found. Try asking the AI assistant to create some
+            tasks!
           </div>
         {:else}
           {#each priorityTasks as task}
@@ -166,6 +136,11 @@
                   {/each}
                 </div>
               {/if}
+              {#if task.due_date}
+                <div class="mt-2 text-xs text-gray-500">
+                  Due: {new Date(task.due_date).toLocaleDateString()}
+                </div>
+              {/if}
             </div>
           {/each}
         {/if}
@@ -174,35 +149,13 @@
   </div>
 
   <!-- AI Chat Interface Section -->
-  <ChatInterface />
-
-  <!-- Quiz Section (Placeholder) -->
   <div class="bg-white rounded-lg shadow-sm border">
-    <div class="p-6 border-b">
-      <h3 class="text-2xl font-semibold">Quick Check-in</h3>
-      <p class="text-sm text-gray-600">
-        Help me understand your current priorities
-      </p>
-    </div>
     <div class="p-6">
-      <div class="text-gray-600 text-center py-4">
-        Quiz interface will appear here when AI confidence is low
-      </div>
+      <ChatInterface on:taskChanged={onTaskChange} />
     </div>
   </div>
 </div>
 
 <style lang="scss">
-  /* Custom styles for landing page using BOSS UI system */
-  .text-boss-neutral {
-    color: var(--boss-neutral);
-  }
-
-  .text-boss-secondary {
-    color: var(--boss-secondary);
-  }
-
-  .text-boss-error {
-    color: var(--boss-error);
-  }
+  /* Custom styles for landing page */
 </style>

@@ -33,7 +33,8 @@ export async function getTopPriorityTasks(limit = 3) {
   }
 
   try {
-    console.log('🔍 Fetching priority tasks...');
+    
+    
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -49,9 +50,15 @@ export async function getTopPriorityTasks(limit = 3) {
     }
 
     console.log('✅ Priority tasks fetched:', data?.length || 0, 'tasks');
-    if (data && data.length === 0) {
-      console.log('⚠️  No tasks returned - this might be due to Row Level Security (RLS)');
-      console.log('💡 Check if you need to disable RLS or authenticate a user');
+    
+    // Debug: Show all tasks found before filtering
+    if (data && data.length > 0) {
+      console.log('🔍 Found tasks:');
+      data.forEach(task => {
+        console.log(`  - "${task.title}" (P${task.priority}, ${task.status})`);
+      });
+    } else {
+      console.log('ℹ️  No tasks found');
     }
     return { success: true, data: data || [] };
   } catch (err) {
@@ -67,14 +74,35 @@ export async function createTask(taskData) {
   }
 
   try {
+    // Get current user session if available (optional since RLS is disabled)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    let taskWithUser = { ...taskData };
+    
+    // Add user_id if we have an authenticated user, otherwise proceed without it
+    if (!authError && user) {
+      taskWithUser.user_id = user.id;
+      console.log('🔧 Creating task with user_id:', user.id);
+    } else {
+      console.log('🔧 Creating task without user_id (RLS disabled)');
+    }
+
+
+
     const { data, error } = await supabase
       .from('tasks')
-      .insert([taskData])
+      .insert([taskWithUser])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating task:', error);
+      console.error('❌ Error creating task:', error);
+      console.error('🔍 Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return { success: false, error: error.message };
     }
 
@@ -138,33 +166,4 @@ export async function deleteTask(id) {
   }
 }
 
-// Debug function to see all tasks in database
-export async function debugAllTasks() {
-  if (!supabase) {
-    console.log('❌ Database not connected');
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('❌ Debug query failed:', error);
-      return;
-    }
-
-    console.log('🔍 ALL TASKS IN DATABASE:');
-    console.table(data);
-    console.log('📊 Task count:', data?.length || 0);
-    
-    if (data && data.length > 0) {
-      console.log('📋 Task statuses:', [...new Set(data.map(t => t.status))]);
-      console.log('🎯 Priority range:', Math.min(...data.map(t => t.priority)), 'to', Math.max(...data.map(t => t.priority)));
-    }
-  } catch (err) {
-    console.error('❌ Debug failed:', err);
-  }
-} 
+ 

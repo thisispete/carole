@@ -1,39 +1,32 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, createEventDispatcher } from "svelte";
   import { databricksService } from "../databricksService";
+
+  const dispatch = createEventDispatcher();
 
   let messages = [];
   let currentMessage = "";
   let isLoading = false;
-  let connectionStatus = "disconnected";
-  let availableModels = [];
-  let selectedModel = "claude-3-5-sonnet";
   let messagesContainer;
+
+  // Use hardcoded model from environment or default
+  const selectedModel =
+    import.meta.env.VITE_DEFAULT_AI_MODEL || "claude-3-5-sonnet";
 
   onMount(async () => {
     // Initialize Databricks service
     console.log("🚀 Initializing Databricks service...");
-    const connected = await databricksService.initialize();
-    connectionStatus = connected ? "connected" : "error";
+    await databricksService.initialize();
 
-    if (connected) {
-      // Load available models
-      const modelsResult = await databricksService.listModels();
-      if (modelsResult.success && modelsResult.models) {
-        availableModels = modelsResult.models;
-        console.log("📋 Loaded models:", availableModels);
-      }
-
-      // Add welcome message
-      messages = [
-        {
-          role: "assistant",
-          content:
-            "Hi! I'm Carole, your AI assistant. I'm here to help you manage your tasks and priorities. What would you like to work on today?",
-          timestamp: new Date(),
-        },
-      ];
-    }
+    // Add welcome message
+    messages = [
+      {
+        role: "assistant",
+        content:
+          "Hi! I'm Carole, your AI assistant. I'm here to help you manage your tasks and priorities. What would you like to work on today?",
+        timestamp: new Date(),
+      },
+    ];
   });
 
   async function sendMessage() {
@@ -70,14 +63,51 @@
       );
 
       if (response.success && response.response) {
+        // Process tool results if present
+        let displayContent = response.response;
+        let toolActions = [];
+
+        if (response.toolResults && response.toolResults.length > 0) {
+          console.log("🔧 Tool results received:", response.toolResults);
+          toolActions = response.toolResults;
+
+          // Only show tool results in the separate tool actions section
+          // Don't add them to the main response content for a cleaner experience
+
+          // Check if any tools were successfully executed that might change tasks
+          const taskChangingTools = [
+            "createTask",
+            "updateTask",
+            "deleteTask",
+            "changeTaskStatus",
+            "changeTaskPriority",
+            "markTaskComplete",
+          ];
+          const hadTaskChanges = toolActions.some(
+            (action) =>
+              taskChangingTools.includes(action.toolCall?.tool) &&
+              action.success
+          );
+
+          // Refresh tasks if any task-changing operations were successful
+          if (hadTaskChanges) {
+            console.log(
+              "🔄 Task changes detected, refreshing parent component..."
+            );
+            dispatch("taskChanged");
+          }
+        }
+
         // Add AI response to chat
         messages = [
           ...messages,
           {
             role: "assistant",
-            content: response.response,
+            content: displayContent,
             timestamp: new Date(),
             model: response.model,
+            toolActions: toolActions,
+            context: response.context,
           },
         ];
         scrollToBottom();
@@ -126,87 +156,45 @@
       }, 50); // Small delay to ensure DOM is updated
     }
   }
-
-  function testPrioritySuggestions() {
-    // Mock task data for testing
-    const mockTasks = [
-      { id: "1", title: "Set up database schema", priority: 8, status: "done" },
-      {
-        id: "2",
-        title: "Build task CRUD interface",
-        priority: 9,
-        status: "in_progress",
-      },
-      {
-        id: "3",
-        title: "Integrate AI chat functionality",
-        priority: 6,
-        status: "todo",
-      },
-      {
-        id: "4",
-        title: "Design priority algorithm",
-        priority: 7,
-        status: "backlog",
-      },
-    ];
-
-    databricksService.getPrioritySuggestions(mockTasks).then((response) => {
-      if (response.success && response.response) {
-        messages = [
-          ...messages,
-          {
-            role: "assistant",
-            content: response.response,
-            timestamp: new Date(),
-            model: response.model,
-            isSystemMessage: true,
-          },
-        ];
-        scrollToBottom();
-      }
-    });
-  }
 </script>
 
 <div class="chat-container">
-  <!-- Header with connection status -->
-  <div class="chat-header">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold">AI Assistant (Databricks)</h3>
-      <div class="flex items-center gap-4">
-        <!-- Connection Status -->
-        <span class="status-indicator status-{connectionStatus}">
-          {#if connectionStatus === "connected"}
-            🟢 Connected
-          {:else if connectionStatus === "error"}
-            🔴 Connection Error
-          {:else}
-            🟡 Connecting...
-          {/if}
-        </span>
-
-        <!-- Model Selector -->
-        {#if availableModels.length > 0}
-          <select bind:value={selectedModel} class="model-select">
-            {#each availableModels as model}
-              <option value={model.name}>
-                {model.displayName}
-                {model.recommended ? "⭐" : ""}
-              </option>
-            {/each}
-          </select>
-        {/if}
-      </div>
-    </div>
-  </div>
-
   <!-- Messages -->
   <div class="messages-container" bind:this={messagesContainer}>
     {#each messages as message}
       <div class="message message-{message.role}" class:error={message.isError}>
         <div class="message-content">
           <p>{message.content}</p>
+
+          <!-- Tool Actions Display -->
+          {#if message.toolActions && message.toolActions.length > 0}
+            <div class="tool-actions">
+              <div class="tool-actions-header">
+                <span class="tool-icon">🛠️</span>
+                <span>Actions taken:</span>
+              </div>
+              {#each message.toolActions as action}
+                <div
+                  class="tool-action"
+                  class:success={action.success}
+                  class:error={!action.success}
+                >
+                  <span class="action-icon">
+                    {action.success ? "✅" : "❌"}
+                  </span>
+                  <span class="action-message">{action.userMessage}</span>
+                  {#if action.taskId}
+                    <small class="task-id"
+                      >Task: {action.taskId.slice(0, 8)}...</small
+                    >
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+
+          <!-- Removed context insights footer to reduce verbosity -->
+
           {#if message.model}
             <small class="model-badge">via {message.model}</small>
           {/if}
@@ -234,13 +222,11 @@
         on:keypress={handleKeyPress}
         placeholder="Ask me about your tasks or priorities..."
         rows="2"
-        disabled={connectionStatus !== "connected" || isLoading}
+        disabled={isLoading}
       ></textarea>
       <button
         on:click={sendMessage}
-        disabled={!currentMessage.trim() ||
-          connectionStatus !== "connected" ||
-          isLoading}
+        disabled={!currentMessage.trim() || isLoading}
         class="send-button"
       >
         Send
@@ -248,15 +234,6 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="quick-actions">
-      <button
-        on:click={testPrioritySuggestions}
-        disabled={connectionStatus !== "connected" || isLoading}
-        class="quick-action-btn"
-      >
-        🎯 Get Priority Suggestions
-      </button>
-    </div>
   </div>
 </div>
 
@@ -268,41 +245,6 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     background: white;
-  }
-
-  .chat-header {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
-  }
-
-  .status-indicator {
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-  }
-
-  .status-connected {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .status-error {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .status-disconnected {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .model-select {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 0.875rem;
   }
 
   .messages-container {
@@ -411,31 +353,6 @@
 
   .send-button:disabled {
     background: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  .quick-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .quick-action-btn {
-    padding: 0.5rem 1rem;
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .quick-action-btn:hover:not(:disabled) {
-    background: #e2e8f0;
-  }
-
-  .quick-action-btn:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
   }
 

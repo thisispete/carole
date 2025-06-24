@@ -5,11 +5,15 @@
  */
 
 import { browser } from "$app/environment";
-
-interface Message {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
+import { buildAIContext, formatContextForAI } from "./aiContext.js";
+import { AIToolExecutor, aiToolExecutor } from "./aiToolExecutor.js";
+import type { AIContext, Message } from "./aiContext.js";
+import type {
+  ToolCall,
+  ToolResult,
+  UserIntent,
+  Intent,
+} from "./aiToolExecutor.js";
 
 interface Model {
   name: string;
@@ -28,6 +32,8 @@ interface AIResponse {
     total_tokens: number;
   };
   error?: string;
+  toolResults?: ToolResult[];
+  context?: AIContext;
 }
 
 interface ConnectionResult {
@@ -97,46 +103,34 @@ class DatabricksService {
     try {
       console.log("🔍 Testing Databricks connection...");
 
-      if (isProduction) {
-        // Production: Test actual connection to Databricks using PAT
-        const token = import.meta.env.VITE_DATABRICKS_TOKEN;
+      const token = import.meta.env.VITE_DATABRICKS_TOKEN;
 
-        if (!token) {
-          return {
-            success: false,
-            error: "Missing VITE_DATABRICKS_TOKEN environment variable",
-            message: "PAT token required for Databricks authentication",
-          };
-        }
+      if (!token) {
+        return {
+          success: false,
+          error: "Missing VITE_DATABRICKS_TOKEN environment variable",
+          message: "PAT token required for Databricks authentication",
+        };
+      }
 
-        const response = await fetch("/api/databricks/api/2.0/clusters/list", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+      const response = await fetch("/api/databricks/api/2.0/clusters/list", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (response.ok) {
-          return {
-            success: true,
-            message: "Databricks connection verified (production)",
-            models: ["claude-3-5-sonnet", "gpt-4o", "llama-3.1-405b"],
-          };
-        } else {
-          return {
-            success: false,
-            error: `HTTP ${response.status}: ${response.statusText}`,
-            message: "Failed to connect to Databricks - check your PAT token",
-          };
-        }
-      } else {
-        // Development: Simulate connection
-        console.log("🔧 Development mode: Simulating Databricks connection");
-
+      if (response.ok) {
         return {
           success: true,
-          message: "Databricks connection ready (development mode)",
+          message: "Databricks connection verified",
           models: ["claude-3-5-sonnet", "gpt-4o", "llama-3.1-405b"],
+        };
+      } else {
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          message: "Failed to connect to Databricks - check your PAT token",
         };
       }
     } catch (error) {
@@ -165,89 +159,56 @@ class DatabricksService {
     try {
       console.log("📋 Fetching available models...");
 
-      if (isProduction) {
-        // Production: Query actual Databricks models endpoint
-        const token = import.meta.env.VITE_DATABRICKS_TOKEN;
+      const token = import.meta.env.VITE_DATABRICKS_TOKEN;
 
-        if (!token) {
-          throw new Error("Missing VITE_DATABRICKS_TOKEN environment variable");
+      if (!token) {
+        throw new Error("Missing VITE_DATABRICKS_TOKEN environment variable");
+      }
+
+      const response = await fetch(
+        "/api/databricks/api/2.0/serving-endpoints",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
+      );
 
-        const response = await fetch(
-          "/api/databricks/api/2.0/serving-endpoints",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      if (response.ok) {
+        const data = await response.json();
+        // Parse the actual response from Databricks
+        const models: Model[] =
+          data.endpoints?.map((endpoint: any) => ({
+            name: endpoint.name,
+            displayName: endpoint.name
+              .replace("-", " ")
+              .replace(/\b\w/g, (l: string) => l.toUpperCase()),
+            description: `${endpoint.task || "LLM"} model via Databricks`,
+            recommended: ["claude-3-5-sonnet", "gpt-4o"].includes(
+              endpoint.name
+            ),
+          })) || [];
 
-        if (response.ok) {
-          const data = await response.json();
-          // Parse the actual response from Databricks
-          const models: Model[] =
-            data.endpoints?.map((endpoint: any) => ({
-              name: endpoint.name,
-              displayName: endpoint.name
-                .replace("-", " ")
-                .replace(/\b\w/g, (l: string) => l.toUpperCase()),
-              description: `${endpoint.task || "LLM"} model via Databricks`,
-              recommended: ["claude-3-5-sonnet", "gpt-4o"].includes(
-                endpoint.name
-              ),
-            })) || [];
-
-          console.log(
-            "📋 Production models loaded:",
-            models.map((m) => m.name)
-          );
-          return { success: true, models };
-        } else {
-          throw new Error(`Failed to fetch models: ${response.status}`);
-        }
+        return {
+          success: true,
+          models: models,
+        };
       } else {
-        // Development: Return mock models
-        const models: Model[] = [
-          {
-            name: "claude-3-5-sonnet",
-            displayName: "Claude 3.5 Sonnet",
-            description: "Anthropic's most capable model",
-            recommended: true,
-          },
-          {
-            name: "gpt-4o",
-            displayName: "GPT-4o",
-            description: "OpenAI's multimodal model",
-            recommended: true,
-          },
-          {
-            name: "llama-3.1-405b",
-            displayName: "Llama 3.1 405B",
-            description: "Meta's largest open model",
-            recommended: false,
-          },
-        ];
-
-        console.log(
-          "📋 Development models:",
-          models.map((m) => m.name)
-        );
-        return { success: true, models };
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      console.error("❌ Failed to list models:", error);
-      return { success: false, error: errorMessage };
+      return {
+        success: false,
+        error: errorMessage,
+      };
     }
   }
 
   /**
-   * Send a chat message to Databricks AI
-   * @param message - User message
-   * @param context - Previous conversation context
-   * @param model - Model to use (defaults to Claude 3.5 Sonnet)
+   * Send message to AI with comprehensive task management capabilities
    */
   async sendMessage(
     message: string,
@@ -259,31 +220,37 @@ class DatabricksService {
     }
 
     try {
-      console.log("💬 Sending message to Databricks AI...");
-      console.log("🤖 Model:", model);
-      console.log("📝 Message:", message);
+      console.log(
+        "🤖 Sending message to Databricks AI:",
+        message.slice(0, 50) + "..."
+      );
 
-      // Build the conversation context
-      const messages: Message[] = [
-        {
-          role: "system",
-          content:
-            "You are Carole, a proactive AI assistant helping with task management and productivity. You have access to the user's task list and can help prioritize, create, and manage tasks. Be helpful, friendly, and proactive in your suggestions.",
-        },
-        ...context,
-        {
-          role: "user",
-          content: message,
-        },
-      ];
+      // Build context and analyze intent with AI-driven system
+      const aiContext = await buildAIContext();
+      const toolExecutor = new AIToolExecutor();
+      const intents = await toolExecutor.analyzeIntent(message, context);
+      console.log("🎯 User intents detected:", intents);
 
       if (isProduction) {
-        // Production: Make actual API call to Databricks
+        // Production: Send to actual Databricks
         const token = import.meta.env.VITE_DATABRICKS_TOKEN;
 
         if (!token) {
           throw new Error("Missing VITE_DATABRICKS_TOKEN environment variable");
         }
+
+        // Enhanced system prompt with tools and context
+        const systemPrompt = this.buildSystemPromptWithTools(aiContext);
+
+        const requestBody = {
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...context,
+            { role: "user", content: message },
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        };
 
         const response = await fetch(
           `/api/databricks/serving-endpoints/${model}/invocations`,
@@ -293,86 +260,644 @@ class DatabricksService {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              messages: messages,
-              max_tokens: 1000,
-              temperature: 0.7,
-            }),
+            body: JSON.stringify(requestBody),
           }
         );
 
         if (!response.ok) {
-          throw new Error(
-            `API request failed: ${response.status} ${response.statusText}`
-          );
+          const errorText = await response.text();
+          console.error("❌ Databricks API Error:", response.status, errorText);
+
+          if (response.status === 503) {
+            throw new Error(
+              "Databricks service is temporarily unavailable. Please try again later."
+            );
+          } else if (response.status === 401) {
+            throw new Error(
+              "Authentication failed. Please check your Databricks token."
+            );
+          } else if (response.status === 403) {
+            throw new Error(
+              "Access denied. Please check your Databricks permissions."
+            );
+          } else {
+            throw new Error(
+              `Databricks API error: ${response.status} ${response.statusText}`
+            );
+          }
         }
 
         const data = await response.json();
-
-        // Parse the response based on Databricks format
         const aiResponse =
-          data.choices?.[0]?.message?.content ||
-          data.response ||
-          "No response received";
+          data.choices?.[0]?.message?.content || "No response from AI";
+
+        // Execute intent-based tools
+        const toolResults = await this.executeIntentBasedTools(intents);
 
         return {
           success: true,
           response: aiResponse,
           model: model,
-          usage: data.usage || {
-            prompt_tokens: messages.reduce(
-              (sum, msg) => sum + msg.content.length / 4,
-              0
-            ),
-            completion_tokens: aiResponse.length / 4,
-            total_tokens: 0,
-          },
+          usage: data.usage,
+          toolResults: toolResults,
+          context: aiContext,
         };
       } else {
-        // Development: Simulate AI response
-        console.log("🔧 Development mode: Simulating AI response");
+        // Development: Use local AI responses with real tool execution
+        console.log(
+          "🔧 Development mode: Using local AI responses with real tools"
+        );
 
-        const simulatedResponse = this.generateSimulatedResponse(message);
+        // Execute intent-based tools (this part is real even in development)
+        const toolResults = await this.executeIntentBasedTools(intents);
+
+        // Generate contextual response based on actual actions and data WITH conversation history
+        const contextualResponse = this.generateContextualResponseWithTools(
+          message,
+          toolResults,
+          aiContext,
+          intents,
+          context // Now passing conversation history!
+        );
 
         return {
           success: true,
-          response: simulatedResponse,
-          model: model,
-          usage: {
-            prompt_tokens: messages.reduce(
-              (sum, msg) => sum + msg.content.length / 4,
-              0
-            ),
-            completion_tokens: simulatedResponse.length / 4,
-            total_tokens: 0,
-          },
+          response: contextualResponse,
+          model: `${model} (local)`,
+          toolResults: toolResults,
+          context: aiContext,
         };
       }
     } catch (error) {
+      console.error("❌ Databricks sendMessage error:", error);
+
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("❌ Databricks AI request failed:", error);
+        error instanceof Error ? error.message : "Unknown error occurred";
+
+      // If we're in production and getting a service error, fall back to development mode
+      if (
+        isProduction &&
+        (errorMessage.includes("503") ||
+          errorMessage.includes("Service Unavailable"))
+      ) {
+        console.log(
+          "🔄 Falling back to development mode due to service unavailability"
+        );
+
+        try {
+          // Build context and execute tools even in fallback mode
+          const aiContext = await buildAIContext();
+          const toolExecutor = new AIToolExecutor();
+          const intents = await toolExecutor.analyzeIntent(message, context);
+          const toolResults = await this.executeIntentBasedTools(intents);
+
+          const fallbackResponse = this.generateContextualResponseWithTools(
+            message,
+            toolResults,
+            aiContext,
+            intents,
+            context // Add conversation history here too
+          );
+
+          return {
+            success: true,
+            response: `${fallbackResponse}\n\n*Note: Using local processing due to service unavailability*`,
+            model: `${model} (fallback)`,
+            toolResults: toolResults,
+            context: aiContext,
+          };
+        } catch (fallbackError) {
+          console.error("❌ Fallback mode also failed:", fallbackError);
+        }
+      }
+
       return {
         success: false,
         error: errorMessage,
+        toolResults: [],
       };
     }
   }
 
   /**
-   * Generate a simulated AI response for development
+   * Build system prompt with tools and context
    * @private
    */
-  private generateSimulatedResponse(message: string): string {
+  private buildSystemPromptWithTools(context: AIContext): string {
+    const contextSummary = formatContextForAI(context);
+
+    return `You are Carole, a casual and helpful AI assistant. You help with tasks but keep things simple and conversational.
+
+${contextSummary}
+
+STYLE:
+- Be super casual and friendly - like texting a friend
+- Keep responses SHORT and sweet
+- Use line breaks to make things easy to read
+- Don't repeat back details the user already knows
+- Just do what they ask without explaining how
+
+RESPONSES:
+- "Done!" instead of "I successfully completed the task"
+- "What's next?" instead of "What else can I help you with today?"
+- Use natural language, not formal sentences
+- Add line breaks between thoughts
+
+Remember: Less is more. Be helpful, not wordy.`;
+  }
+
+  /**
+   * Execute tools based on user intent
+   * @private
+   */
+  private async executeIntentBasedTools(
+    intents: Intent[]
+  ): Promise<ToolResult[]> {
+    const toolResults: ToolResult[] = [];
+
+    for (const intent of intents) {
+      console.log(
+        `🎯 Processing intent: ${intent.type} (confidence: ${intent.confidence})`
+      );
+
+      // Special handling for task creation - check ambiguity first
+      if (intent.type === "create") {
+        const ambiguity = intent.parameters?._ambiguityAnalysis;
+        const duplicateCheck = intent.parameters?._duplicateCheck;
+
+        console.log("🤔 Ambiguity analysis:", ambiguity);
+        console.log("🔍 Duplicate check:", duplicateCheck);
+
+        // Don't execute if highly ambiguous or has duplicates - let response generation handle it
+        if (
+          (ambiguity && ambiguity.score > 30) ||
+          (duplicateCheck && duplicateCheck.hasDuplicates)
+        ) {
+          console.log(
+            "⚠️ Task creation blocked due to ambiguity or duplicates - will ask for clarification"
+          );
+          console.log("🔍 Ambiguity details:", ambiguity);
+          console.log("🔍 Duplicate details:", duplicateCheck);
+          continue; // Skip execution, let response generation ask questions
+        }
+
+        // Also skip if confidence is too low (lowered threshold for creation)
+        if (intent.confidence < 0.4) {
+          console.log(
+            "⚠️ Task creation confidence too low - will ask for clarification"
+          );
+          continue;
+        }
+      }
+
+      // Execute intents with sufficient confidence (lowered threshold)
+      if (intent.confidence >= 0.3) {
+        const toolCall = this.intentToToolCall(intent);
+        if (toolCall) {
+          console.log(
+            `🛠️ Executing tool based on intent: ${intent.type} (confidence: ${intent.confidence})`
+          );
+          const result = await aiToolExecutor.executeTool(toolCall);
+          toolResults.push(result);
+        }
+      } else {
+        console.log(
+          `⚠️ Intent detected but confidence too low: ${intent.type} (${intent.confidence} < 0.5)`
+        );
+
+        // For task creation with low confidence, check if it was blocked for good reasons
+        if (intent.type === "create" && intent.confidence >= 0.3) {
+          const ambiguity = intent.parameters?._ambiguityAnalysis;
+          const duplicateCheck = intent.parameters?._duplicateCheck;
+
+          // Don't override confidence if we have good reasons to block
+          if (
+            (ambiguity && ambiguity.score > 30) ||
+            (duplicateCheck && duplicateCheck.hasDuplicates)
+          ) {
+            console.log(
+              "⚠️ Task creation still blocked due to ambiguity/duplicates - not overriding"
+            );
+          } else {
+            console.log(
+              "🔄 Attempting task creation with manual confidence override..."
+            );
+            const toolCall = this.intentToToolCall(intent);
+            if (toolCall && toolCall.parameters?.title) {
+              // Override confidence if we have at least a title and no blocking issues
+              const result = await aiToolExecutor.executeTool(toolCall);
+              toolResults.push(result);
+            }
+          }
+        }
+      }
+    }
+
+    return toolResults;
+  }
+
+  /**
+   * Convert user intent to tool call
+   * @private
+   */
+  private intentToToolCall(intent: UserIntent): ToolCall | null {
+    switch (intent.type) {
+      case "create":
+        return {
+          tool: "createTask",
+          parameters: intent.parameters || {},
+          reasoning: intent.reasoning,
+          confidence: intent.confidence,
+        };
+
+      case "complete":
+        if (intent.targetTask) {
+          return {
+            tool: "markTaskComplete",
+            parameters: { taskId: intent.targetTask.id },
+            reasoning: intent.reasoning,
+            confidence: intent.confidence,
+          };
+        }
+        break;
+
+      case "status_change":
+        if (intent.targetTask && intent.parameters?.status) {
+          return {
+            tool: "changeTaskStatus",
+            parameters: {
+              taskId: intent.targetTask.id,
+              status: intent.parameters.status,
+            },
+            reasoning: intent.reasoning,
+            confidence: intent.confidence,
+          };
+        }
+        break;
+
+      case "priority_change":
+        if (intent.targetTask && intent.parameters?.priority !== undefined) {
+          return {
+            tool: "changeTaskPriority",
+            parameters: {
+              taskId: intent.targetTask.id,
+              priority: intent.parameters.priority,
+            },
+            reasoning: intent.reasoning,
+            confidence: intent.confidence,
+          };
+        }
+        break;
+
+      case "search":
+        if (intent.parameters?.query) {
+          return {
+            tool: "searchTasks",
+            parameters: { query: intent.parameters.query },
+            reasoning: intent.reasoning,
+            confidence: intent.confidence,
+          };
+        }
+        break;
+
+      case "analyze":
+        return {
+          tool: "analyzeTasks",
+          parameters: {},
+          reasoning: intent.reasoning,
+          confidence: intent.confidence,
+        };
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate a contextual AI response based on actual tool results and real data
+   * @private
+   */
+  private generateContextualResponseWithTools(
+    message: string,
+    toolResults: ToolResult[],
+    context: AIContext,
+    intents: UserIntent[],
+    conversationHistory: Message[] = []
+  ): string {
+    console.log("🧠 Generating response with conversation memory...");
+    console.log("💬 Recent messages:", conversationHistory.length);
+
+    // Analyze conversation context
+    const conversationContext = this.analyzeConversationContext(
+      conversationHistory,
+      message
+    );
+
+    // If we executed tools, incorporate their results
+    if (toolResults.length > 0) {
+      const successfulTools = toolResults.filter((r) => r.success);
+      const failedTools = toolResults.filter((r) => !r.success);
+
+      let response = "";
+
+      if (successfulTools.length > 0) {
+        // Add conversation-aware responses
+        if (conversationContext.isFollowUp) {
+          response += "Got it! ";
+        } else if (conversationContext.seemsImpatient) {
+          response += "Done! ";
+        } else if (conversationContext.isPolite) {
+          response += "Sure thing! ";
+        }
+
+        // Generate accurate responses based on actual tool results
+        for (const tool of successfulTools) {
+          if (tool.toolCall?.tool === "createTask" && tool.data) {
+            // Use actual task data instead of generic message
+            const task = tool.data;
+            response += `I've added that task for you: "${task.title}"\n`;
+            response += `Priority: ${task.priority} ${
+              task.priority >= 8
+                ? "(High)"
+                : task.priority >= 6
+                ? "(Medium)"
+                : "(Low)"
+            }\n`;
+            response += `Status: ${task.status.replace("_", " ")}\n`;
+            if (task.due_date) {
+              response += `Due: ${new Date(
+                task.due_date
+              ).toLocaleDateString()}\n`;
+            }
+          } else {
+            // For other tools, use the standard message
+            response += tool.userMessage;
+          }
+        }
+        response += "\n";
+      }
+
+      if (failedTools.length > 0) {
+        if (conversationContext.hasTriedBefore) {
+          response += "Still having trouble with that... ";
+        }
+        response += failedTools.map((tool) => tool.userMessage).join(" ");
+        response += "\n\n";
+      }
+
+      // Add contextual follow-up based on conversation
+      response += this.generateConversationAwareFollowUp(
+        context,
+        conversationContext
+      );
+
+      return response;
+    }
+
+    // Check if we have intents but no tool results (blocked due to ambiguity/duplicates)
+    if (intents.length > 0 && toolResults.length === 0) {
+      const createIntent = intents.find((intent) => intent.type === "create");
+      if (createIntent) {
+        const ambiguity = createIntent.parameters?._ambiguityAnalysis;
+        const duplicateCheck = createIntent.parameters?._duplicateCheck;
+
+        // If we blocked due to ambiguity or duplicates, provide guidance
+        if (
+          (ambiguity && ambiguity.score > 30) ||
+          (duplicateCheck && duplicateCheck.hasDuplicates)
+        ) {
+          return this.generateAmbiguityResponse(createIntent);
+        }
+
+        // If we blocked due to low confidence, ask for clarification
+        if (createIntent.confidence < 0.6) {
+          return this.generateAmbiguityResponse(createIntent);
+        }
+      }
+
+      // Handle other low-confidence intents
+      const lowConfidenceIntents = intents.filter(
+        (intent) => intent.confidence < 0.5
+      );
+
+      if (lowConfidenceIntents.length > 0) {
+        const intent = lowConfidenceIntents[0];
+
+        // Use conversation context to provide better clarification
+        switch (intent.type) {
+          case "complete":
+            if (conversationContext.mentionedSpecificTask) {
+              return "Which task did you want to mark as done?";
+            }
+            return "Looks like you want to mark something as done!\n\nWhich task are you referring to?";
+
+          case "status_change":
+            return "Want to change a task status?\n\nWhich task and what status should it be?";
+
+          case "priority_change":
+            if (conversationContext.hasDiscussedPriorities) {
+              return "Another priority change?\n\nWhich task and what priority (0-10)?";
+            }
+            return "Looks like you want to change a priority!\n\nWhich task and what priority (0-10)?";
+
+          case "search":
+            return "Want to search for something?\n\nWhat should I look for?";
+
+          case "analyze":
+            return "Want me to analyze your tasks?\n\nLet me take a look...";
+
+          default:
+            if (conversationContext.seemsRepetitive) {
+              return "I'm still not quite getting it.\n\nCan you try explaining it differently?";
+            }
+            return "I think I understand what you want but need more details!\n\nCan you be more specific?";
+        }
+      }
+    }
+
+    // No intents detected - use conversation-aware responses
+    return this.generateConversationAwareResponse(context, conversationContext);
+  }
+
+  /**
+   * Analyze conversation context for better responses
+   * @private
+   */
+  private analyzeConversationContext(
+    history: Message[],
+    currentMessage: string
+  ): {
+    isFollowUp: boolean;
+    seemsImpatient: boolean;
+    isPolite: boolean;
+    hasTriedBefore: boolean;
+    hasAskedForTasks: boolean;
+    seemsConfused: boolean;
+    mentionedSpecificTask: boolean;
+    hasDiscussedPriorities: boolean;
+    seemsRepetitive: boolean;
+  } {
+    const recentMessages = history.slice(-3); // Last 3 messages
+    const allContent = recentMessages
+      .map((m) => m.content.toLowerCase())
+      .join(" ");
+    const currentLower = currentMessage.toLowerCase();
+
+    return {
+      isFollowUp: /\b(also|and|then|next|after that)\b/.test(currentLower),
+      seemsImpatient: /\b(still|again|yet|why|please|come on)\b/.test(
+        currentLower
+      ),
+      isPolite: /\b(please|thanks|thank you|could you)\b/.test(currentLower),
+      hasTriedBefore: recentMessages.some(
+        (m) =>
+          m.role === "user" &&
+          /\b(create|add|make)\b/.test(m.content.toLowerCase())
+      ),
+      hasAskedForTasks: /\b(task|todo|create|add)\b/.test(allContent),
+      seemsConfused: /\b(help|how|what|confused|don't understand)\b/.test(
+        currentLower
+      ),
+      mentionedSpecificTask: /\b(this|that|the [\w\s]+ task)\b/.test(
+        currentLower
+      ),
+      hasDiscussedPriorities: /\b(priority|important|urgent)\b/.test(
+        allContent
+      ),
+      seemsRepetitive:
+        recentMessages.filter(
+          (m) =>
+            m.role === "user" &&
+            m.content.toLowerCase().includes(currentLower.slice(0, 10))
+        ).length > 1,
+    };
+  }
+
+  /**
+   * Generate conversation-aware follow-up
+   * @private
+   */
+  private generateConversationAwareFollowUp(
+    context: AIContext,
+    convContext: any
+  ): string {
+    if (convContext.isFollowUp) {
+      return "What's next?";
+    }
+
+    if (context.blockedTasks.length > 0 && !convContext.hasAskedForTasks) {
+      return context.blockedTasks.length === 1
+        ? "Got a blocked task.\n\nWant to talk through it?"
+        : `Got ${context.blockedTasks.length} blocked tasks.\n\nWant to tackle those?`;
+    }
+
+    if (
+      context.topPriorityTasks.length > 0 &&
+      !convContext.hasDiscussedPriorities
+    ) {
+      return `Top priority: "${context.topPriorityTasks[0].title}"\n\nStart there?`;
+    }
+
+    return "What else can I help with?";
+  }
+
+  /**
+   * Generate conversation-aware response when no intents detected
+   * @private
+   */
+  private generateConversationAwareResponse(
+    context: AIContext,
+    convContext: any
+  ): string {
+    // Handle confused users
+    if (convContext.seemsConfused) {
+      return 'No problem! I can help you:\n\n• Create tasks ("create a task to...")\n• Update priorities ("make X high priority")\n• Mark things done ("mark X as complete")\n\nWhat would you like to do?';
+    }
+
+    // Handle repetitive requests
+    if (convContext.seemsRepetitive) {
+      return "Hmm, seems like we're going in circles.\n\nLet me try a different approach - what's the main thing you want to accomplish right now?";
+    }
+
+    // Standard contextual responses based on task state
     const responses = [
-      "I can help you with that! Based on your current tasks, I'd suggest focusing on the highest priority items first. Would you like me to analyze your task list?",
-      "That's a great question! I noticed you have some tasks that might be related. Should we group them together to work more efficiently?",
-      "I can see you're working on several projects. Let me help you prioritize based on deadlines and importance. What's most urgent right now?",
-      "Thanks for the update! I've noted that in your task context. Is there anything blocking you from making progress on this?",
-      "I understand. Let me suggest a different approach that might work better for your current situation. Have you considered breaking this down into smaller steps?",
+      context.suggestedFocus.includes("overdue")
+        ? "Got some overdue stuff!\n\nWant to knock those out first?"
+        : convContext.isPolite
+        ? "Hey! Happy to help - what's up?"
+        : "Hey! What's up?",
+
+      context.topPriorityTasks.length > 0
+        ? `Top priority: "${context.topPriorityTasks[0].title}"\n\nStart there?`
+        : convContext.hasAskedForTasks
+        ? "Want to create another task?"
+        : "What's on your mind?",
+
+      context.blockedTasks.length > 0
+        ? "Noticed some blocked tasks...\n\nWant to get those unstuck?"
+        : convContext.isFollowUp
+        ? "What's next?"
+        : "What can I help with?",
+
+      context.completedToday.length > 0
+        ? `Nice! Already got ${context.completedToday.length} done today.\n\nWhat's next?`
+        : "Ready to get stuff done?",
     ];
 
     return responses[Math.floor(Math.random() * responses.length)];
+  }
+
+  /**
+   * Generate response for ambiguous or duplicate-prone task creation
+   * @private
+   */
+  private generateAmbiguityResponse(intent: UserIntent): string {
+    console.log("🤔 Generating ambiguity response for intent:", intent);
+    const ambiguity = intent.parameters?._ambiguityAnalysis;
+    const duplicateCheck = intent.parameters?._duplicateCheck;
+
+    let response = "";
+
+    // Handle duplicates first
+    if (duplicateCheck?.hasDuplicates) {
+      const duplicates = duplicateCheck.duplicates;
+      if (duplicates.length === 1 && duplicates[0].matchType === "exact") {
+        return `Looks like you already have that task: "${duplicates[0].task.title}"\n\nDid you mean to update it instead?`;
+      } else if (duplicates.length > 0) {
+        const similarTasks = duplicates
+          .slice(0, 2)
+          .map((d: any) => `"${d.task.title}"`)
+          .join(", ");
+        response += `I found similar tasks: ${similarTasks}\n\n`;
+        response +=
+          "Want to create a new one anyway, or update an existing one?";
+        return response;
+      }
+    }
+
+    // Handle ambiguity
+    if (ambiguity && ambiguity.score > 30) {
+      response += "I can create that task, but I need a few more details:\n\n";
+
+      ambiguity.suggestions.forEach((suggestion: string, index: number) => {
+        response += `${index + 1}. ${suggestion}\n`;
+      });
+
+      response += "\nJust let me know and I'll set it up!";
+      return response;
+    }
+
+    // Low confidence fallback
+    if (intent.confidence < 0.5) {
+      response +=
+        "I think you want to create a task, but I'm not quite sure.\n\n";
+      if (intent.parameters?.title) {
+        response += `Is this right: "${intent.parameters.title}"?\n\n`;
+      }
+      response += "Give me a bit more detail and I'll create it for you!";
+      return response;
+    }
+
+    return "Got it! Creating that task now...";
   }
 
   /**
@@ -405,6 +930,3 @@ class DatabricksService {
 
 // Export singleton instance
 export const databricksService = new DatabricksService();
-
-// Export the class for testing
-export { DatabricksService };
