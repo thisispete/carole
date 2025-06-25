@@ -1,11 +1,40 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getTopPriorityTasks } from "$lib/taskService.js";
+  import {
+    getTopPriorityTasks,
+    updateTask,
+    deleteTask,
+  } from "$lib/taskService.js";
   import ChatInterface from "$lib/components/ChatInterface.svelte";
+  import TaskDetailModal from "$lib/components/task/TaskDetailModal.svelte";
+  import ContextMenu from "$lib/components/ui/ContextMenu.svelte";
+  import Popover from "$lib/components/ui/Popover.svelte";
+  import ConfirmDialog from "$lib/components/ui/ConfirmDialog.svelte";
 
   let priorityTasks: any[] = [];
   let tasksLoading = true;
   let tasksError = "";
+
+  // Task modal state
+  let selectedTask: any = null;
+  let showTaskModal = false;
+
+  // Context menu state
+  let showContextMenu = false;
+  let contextMenuX = 0;
+  let contextMenuY = 0;
+  let contextMenuTask: any = null;
+
+  // Popover state
+  let showPopover = false;
+  let popoverAnchor: any = null;
+  let popoverType = "status";
+  let popoverTask: any = null;
+
+  // Confirmation dialog state
+  let showConfirmDialog = false;
+  let confirmAction: string | null = null;
+  let confirmTask: any = null;
 
   // Add refresh function
   function onTaskChange() {
@@ -60,6 +89,171 @@
     if (!dateString) return null;
     return new Date(dateString).toLocaleDateString();
   }
+
+  // Task interaction handlers
+  function handleTaskClick(task: any) {
+    selectedTask = task;
+    showTaskModal = true;
+  }
+
+  function handleTaskUpdated(event: any) {
+    const updatedTask = event.detail;
+    // Update the task in our local priorityTasks array
+    priorityTasks = priorityTasks.map((task) =>
+      task.id === updatedTask.id ? updatedTask : task
+    );
+    // Also refresh to get updated priority ranking
+    onTaskChange();
+  }
+
+  function handleTaskDeleted(event: any) {
+    const deletedTask = event.detail;
+    // Remove the task from our local priorityTasks array
+    priorityTasks = priorityTasks.filter((task) => task.id !== deletedTask.id);
+    // Refresh to get a new task to fill the top 3
+    onTaskChange();
+  }
+
+  function handleStatusClick(event: any, task: any) {
+    event.stopPropagation();
+    popoverAnchor = event.target;
+    popoverType = "status";
+    popoverTask = task;
+    showPopover = true;
+  }
+
+  function handlePriorityClick(event: any, task: any) {
+    event.stopPropagation();
+    popoverAnchor = event.target;
+    popoverType = "priority";
+    popoverTask = task;
+    showPopover = true;
+  }
+
+  function handleRightClick(event: any, task: any) {
+    event.preventDefault();
+    contextMenuX = event.clientX;
+    contextMenuY = event.clientY;
+    contextMenuTask = task;
+    showContextMenu = true;
+  }
+
+  // Context menu actions
+  async function handleContextAction(event: any) {
+    const { action, task } = event.detail;
+
+    switch (action) {
+      case "edit":
+        selectedTask = task;
+        showTaskModal = true;
+        break;
+      case "complete":
+        await quickUpdateTask(task.id, { status: "done" });
+        break;
+      case "duplicate":
+        await duplicateTask(task);
+        break;
+      case "priority":
+        popoverAnchor = document.querySelector(
+          `[data-task-id="${task.id}"] .priority-button`
+        );
+        popoverType = "priority";
+        popoverTask = task;
+        showPopover = true;
+        break;
+      case "status":
+        popoverAnchor = document.querySelector(
+          `[data-task-id="${task.id}"] .status-button`
+        );
+        popoverType = "status";
+        popoverTask = task;
+        showPopover = true;
+        break;
+      case "delete":
+        confirmAction = "delete";
+        confirmTask = task;
+        showConfirmDialog = true;
+        break;
+    }
+  }
+
+  // Popover selection
+  async function handlePopoverSelect(event: any) {
+    const { type, value } = event.detail;
+    if (!popoverTask) return;
+
+    const field = type === "status" ? "status" : "priority";
+    await quickUpdateTask(popoverTask.id, { [field]: value });
+  }
+
+  // Confirmation dialog
+  async function handleConfirmAction() {
+    if (confirmAction === "delete" && confirmTask) {
+      await deleteTaskAction(confirmTask.id);
+    }
+
+    confirmAction = null;
+    confirmTask = null;
+  }
+
+  // Quick task update helper
+  async function quickUpdateTask(taskId: any, updates: any) {
+    try {
+      const result = await updateTask(taskId, updates);
+      if (result.success) {
+        // Update local task list
+        priorityTasks = priorityTasks.map((task) =>
+          task.id === taskId ? { ...task, ...updates } : task
+        );
+        // Refresh to get updated priority ranking
+        onTaskChange();
+      } else {
+        console.error("Failed to update task:", result.error);
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  }
+
+  // Delete task action
+  async function deleteTaskAction(taskId: any) {
+    try {
+      const result = await deleteTask(taskId);
+      if (result.success) {
+        // Remove from local task list and refresh
+        priorityTasks = priorityTasks.filter((task) => task.id !== taskId);
+        onTaskChange(); // Get a new task to fill the top 3
+      } else {
+        console.error("Failed to delete task:", result.error);
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  }
+
+  // Duplicate task action
+  async function duplicateTask(originalTask: any) {
+    try {
+      const { createTask } = await import("$lib/taskService.js");
+      const duplicatedTask = {
+        ...originalTask,
+        title: `${originalTask.title} (Copy)`,
+        id: undefined, // Remove ID so a new one is generated
+        created_at: undefined,
+        updated_at: undefined,
+      };
+
+      const result = await createTask(duplicatedTask);
+      if (result.success) {
+        // Refresh priority tasks to potentially include the new task
+        onTaskChange();
+      } else {
+        console.error("Failed to duplicate task:", result.error);
+      }
+    } catch (error) {
+      console.error("Error duplicating task:", error);
+    }
+  }
 </script>
 
 <div class="py-6 space-y-8">
@@ -97,7 +291,14 @@
         <!-- Task Rows -->
         <div class="task-list-body">
           {#each priorityTasks as task (task.id)}
-            <div class="task-row">
+            <div
+              class="task-row"
+              data-task-id={task.id}
+              on:click={() => handleTaskClick(task)}
+              on:contextmenu={(e) => handleRightClick(e, task)}
+              role="button"
+              tabindex="0"
+            >
               <div class="column title-column">
                 <div class="task-title">{task.title}</div>
                 {#if task.description}
@@ -106,15 +307,21 @@
               </div>
 
               <div class="column priority-column">
-                <div class="priority-button {getPriorityClass(task.priority)}">
+                <button
+                  class="priority-button {getPriorityClass(task.priority)}"
+                  on:click={(e) => handlePriorityClick(e, task)}
+                >
                   P{task.priority}
-                </div>
+                </button>
               </div>
 
               <div class="column status-column">
-                <div class="status-button">
+                <button
+                  class="status-button"
+                  on:click={(e) => handleStatusClick(e, task)}
+                >
                   {getStatusLabel(task.status)}
-                </div>
+                </button>
               </div>
 
               <div class="column tags-column">
@@ -150,11 +357,55 @@
 
   <!-- AI Chat Interface Section -->
   <div class="bg-white rounded-lg shadow-sm border">
-    <div class="p-6">
+    <div class="chat-section">
       <ChatInterface on:taskChanged={onTaskChange} />
     </div>
   </div>
 </div>
+
+<!-- Task Detail Modal -->
+<TaskDetailModal
+  task={selectedTask}
+  bind:isOpen={showTaskModal}
+  on:taskUpdated={handleTaskUpdated}
+  on:taskDeleted={handleTaskDeleted}
+  on:close={() => (showTaskModal = false)}
+/>
+
+<!-- Context Menu -->
+<ContextMenu
+  task={contextMenuTask}
+  x={contextMenuX}
+  y={contextMenuY}
+  bind:isOpen={showContextMenu}
+  on:action={handleContextAction}
+  on:close={() => (showContextMenu = false)}
+/>
+
+<!-- Quick Edit Popover -->
+<Popover
+  anchor={popoverAnchor}
+  type={popoverType}
+  currentValue={popoverTask &&
+    (popoverType === "status" ? popoverTask.status : popoverTask.priority)}
+  bind:isOpen={showPopover}
+  on:select={handlePopoverSelect}
+  on:close={() => (showPopover = false)}
+/>
+
+<!-- Confirmation Dialog -->
+<ConfirmDialog
+  bind:isOpen={showConfirmDialog}
+  title="Delete Task"
+  message={confirmTask
+    ? `Are you sure you want to delete "${confirmTask.title}"? This action cannot be undone.`
+    : ""}
+  confirmText="Delete"
+  cancelText="Cancel"
+  type="danger"
+  on:confirm={handleConfirmAction}
+  on:cancel={() => (showConfirmDialog = false)}
+/>
 
 <style lang="scss">
   /* Task list styles - consistent with tasks page */
@@ -201,7 +452,13 @@
     gap: 1rem;
     padding: 1.5rem;
     border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
     align-items: center;
+  }
+
+  .task-row:hover {
+    background-color: #f8f9fa;
   }
 
   .task-row:last-child {
@@ -244,7 +501,14 @@
     font-size: 0.8rem;
     font-weight: bold;
     border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
     width: fit-content;
+  }
+
+  .priority-button:hover,
+  .status-button:hover {
+    opacity: 0.8;
   }
 
   .priority-button.high {
@@ -337,5 +601,19 @@
     .tag {
       font-size: 0.65rem;
     }
+  }
+
+  /* Chat section styling */
+  .chat-section {
+    /* Remove padding to make chat interface edge-to-edge */
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* Override chat interface styling when embedded in landing page */
+  .chat-section :global(.chat-container) {
+    border: none;
+    border-radius: 0;
+    height: 450px; /* Slightly smaller than standalone */
   }
 </style>

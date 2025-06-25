@@ -499,6 +499,7 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .filter-btn {
