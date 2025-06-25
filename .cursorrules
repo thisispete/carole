@@ -151,4 +151,16 @@ The Memory Bank MUST be kept current. Updates occur when:
 4. **When Context Needs Clarification:**
    - If you encounter ambiguity or information in the Memory Bank that seems outdated while performing a task, seek clarification from the user. Subsequently, propose updates to the relevant Memory Bank files to reflect the new understanding.
 
+## Brainstorming & Phase Planning Process
+
+When planning major phases or features:
+
+1. **Single Question Approach:** Ask ONE focused question at a time, never overwhelm with 20+ questions
+2. **Wait for Answer:** Let user fully respond before asking next logical question
+3. **Build on Responses:** Use their answer to inform the next question's focus
+4. **Document Decisions:** Capture both the process and the decisions made
+5. **Mandatory Pre-Phase:** Always do this type of brainstorming before starting any major phase
+6. **Focus on Core Problems:** Identify the main challenge/goal, then explore implementation details
+7. **Acknowledge Complexity:** When user says "I'm not sure," offer your perspective or suggest approaches
+
 REMEMBER: After every memory reset, you begin completely fresh. The Memory Bank is your only link to previous work. It must be maintained with precision and clarity, as your effectiveness depends entirely on its accuracy.

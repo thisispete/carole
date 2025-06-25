@@ -2,7 +2,8 @@
 
 **Project:** Carole (AI Personal Assistant)  
 **Last Updated:** 2025-01-13  
-**Status:** Phase 2.8.1 Complete - Landing Page Parity & UI Polish
+**Status:** Phase 2.8.1 Complete - Landing Page Parity & UI Polish  
+**Roadmap:** Reordered Jan 2025 - Vector Integration (Phase 3) prioritized over Smart Features (Phase 4)
 
 ## Memory Bank Structure
 
@@ -165,7 +166,7 @@ graph TD
 #### Backend & Database
 
 - **Supabase**: PostgreSQL database with Row Level Security
-- **pgvector**: Vector database for semantic search and conversation memory
+- **pgvector**: Vector database extension (planned for Phase 3 conversation memory)
 - **Databricks AI**: AI model endpoints (Claude 3.5 Sonnet, GPT-4o, Llama)
 
 #### AI Integration
