@@ -35,7 +35,7 @@
   let showCreateModal = false;
 
   // Filter options
-  const filters = [
+  let filters = [
     { id: "all", label: "All Tasks", count: 0 },
     { id: "todo", label: "To Do", count: 0 },
     { id: "in_progress", label: "In Progress", count: 0 },
@@ -70,23 +70,32 @@
 
   function updateFilterCounts() {
     // Update filter counts based on current tasks
-    filters.forEach((filter) => {
+    filters = filters.map((filter) => {
       switch (filter.id) {
         case "all":
-          filter.count = tasks.length;
-          break;
+          return { ...filter, count: tasks.length };
         case "todo":
-          filter.count = tasks.filter((t) => t.status === "todo").length;
-          break;
+          return {
+            ...filter,
+            count: tasks.filter((t) => t.status === "todo").length,
+          };
         case "in_progress":
-          filter.count = tasks.filter((t) => t.status === "in_progress").length;
-          break;
+          return {
+            ...filter,
+            count: tasks.filter((t) => t.status === "in_progress").length,
+          };
         case "blocked":
-          filter.count = tasks.filter((t) => t.status === "blocked").length;
-          break;
+          return {
+            ...filter,
+            count: tasks.filter((t) => t.status === "blocked").length,
+          };
         case "high_priority":
-          filter.count = tasks.filter((t) => t.priority >= 8).length;
-          break;
+          return {
+            ...filter,
+            count: tasks.filter((t) => t.priority >= 8).length,
+          };
+        default:
+          return filter;
       }
     });
   }
@@ -153,6 +162,13 @@
     tasks = tasks.map((task) =>
       task.id === updatedTask.id ? updatedTask : task
     );
+    updateFilterCounts();
+  }
+
+  function handleTaskDeleted(event) {
+    const deletedTask = event.detail;
+    // Remove the task from our local tasks array
+    tasks = tasks.filter((task) => task.id !== deletedTask.id);
     updateFilterCounts();
   }
 
@@ -311,36 +327,22 @@
   }
 </script>
 
-<h1>Task Browser</h1>
-<p>Manage and organize all your tasks</p>
-
-<div class="task-filters">
-  <h2>Quick Filters</h2>
-  <div class="filter-buttons">
-    {#each filters as filter}
-      <button
-        class="filter-btn"
-        class:active={selectedFilter === filter.id}
-        on:click={() => selectFilter(filter.id)}
-      >
-        {filter.label}
-        {#if filter.count > 0}
+<div class="bg-white rounded-lg shadow-sm border">
+  <!-- Filter Header Section -->
+  <div class="p-6 border-b">
+    <div class="filter-buttons">
+      {#each filters as filter}
+        <button
+          class="filter-btn"
+          class:active={selectedFilter === filter.id}
+          on:click={() => selectFilter(filter.id)}
+        >
+          {filter.label}
           <span class="count">({filter.count})</span>
-        {/if}
-      </button>
-    {/each}
+        </button>
+      {/each}
+    </div>
   </div>
-</div>
-
-<div class="task-list">
-  <h2>
-    {#if selectedFilter === "all"}
-      All Tasks
-    {:else}
-      {filters.find((f) => f.id === selectedFilter)?.label || "Tasks"}
-    {/if}
-    ({filteredTasks.length})
-  </h2>
 
   {#if loading}
     <div class="loading">Loading tasks...</div>
@@ -359,49 +361,78 @@
       {/if}
     </div>
   {:else}
-    <div class="task-grid">
-      {#each filteredTasks as task (task.id)}
-        <div
-          class="task-card"
-          data-task-id={task.id}
-          on:click={() => handleTaskClick(task)}
-          on:contextmenu={(e) => handleRightClick(e, task)}
-          role="button"
-          tabindex="0"
-        >
-          <h3>{task.title}</h3>
-          {#if task.description}
-            <p class="description">{task.description}</p>
-          {/if}
+    <div class="task-list-container">
+      <!-- Table Header -->
+      <div class="task-list-header">
+        <div class="column title-column">Task</div>
+        <div class="column priority-column">Priority</div>
+        <div class="column status-column">Status</div>
+        <div class="column tags-column">Tags</div>
+        <div class="column due-column">Due Date</div>
+      </div>
 
-          <div class="task-meta">
-            <button
-              class="priority {getPriorityClass(task.priority)}"
-              on:click={(e) => handlePriorityClick(e, task)}
-            >
-              {getPriorityLabel(task.priority)} Priority (P{task.priority})
-            </button>
+      <!-- Task Rows -->
+      <div class="task-list-body">
+        {#each filteredTasks as task (task.id)}
+          <div
+            class="task-row"
+            data-task-id={task.id}
+            on:click={() => handleTaskClick(task)}
+            on:contextmenu={(e) => handleRightClick(e, task)}
+            role="button"
+            tabindex="0"
+          >
+            <div class="column title-column">
+              <div class="task-title">{task.title}</div>
+              {#if task.description}
+                <div class="task-description">{task.description}</div>
+              {/if}
+            </div>
 
-            <button class="status" on:click={(e) => handleStatusClick(e, task)}>
-              {getStatusLabel(task.status)}
-            </button>
+            <div class="column priority-column">
+              <button
+                class="priority-button {getPriorityClass(task.priority)}"
+                on:click={(e) => handlePriorityClick(e, task)}
+              >
+                P{task.priority}
+              </button>
+            </div>
+
+            <div class="column status-column">
+              <button
+                class="status-button"
+                on:click={(e) => handleStatusClick(e, task)}
+              >
+                {getStatusLabel(task.status)}
+              </button>
+            </div>
+
+            <div class="column tags-column">
+              {#if task.context_tags && task.context_tags.length > 0}
+                <div class="tags">
+                  {#each task.context_tags.slice(0, 2) as tag}
+                    <span class="tag">{tag}</span>
+                  {/each}
+                  {#if task.context_tags.length > 2}
+                    <span class="tag-more">+{task.context_tags.length - 2}</span
+                    >
+                  {/if}
+                </div>
+              {:else}
+                <span class="no-tags">—</span>
+              {/if}
+            </div>
+
+            <div class="column due-column">
+              {#if task.due_date}
+                <span class="due-date">{formatDate(task.due_date)}</span>
+              {:else}
+                <span class="no-due-date">—</span>
+              {/if}
+            </div>
           </div>
-
-          {#if task.context_tags && task.context_tags.length > 0}
-            <div class="tags">
-              {#each task.context_tags as tag}
-                <span class="tag">{tag}</span>
-              {/each}
-            </div>
-          {/if}
-
-          {#if task.due_date}
-            <div class="due-date">
-              Due: {formatDate(task.due_date)}
-            </div>
-          {/if}
-        </div>
-      {/each}
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
@@ -417,6 +448,7 @@
   task={selectedTask}
   bind:isOpen={showTaskModal}
   on:taskUpdated={handleTaskUpdated}
+  on:taskDeleted={handleTaskDeleted}
   on:close={() => (showTaskModal = false)}
 />
 
@@ -462,19 +494,7 @@
   on:close={() => (showCreateModal = false)}
 />
 
-<nav>
-  <a href="/">← Back to Dashboard</a>
-  <a href="/analytics">Analytics</a>
-</nav>
-
 <style>
-  .task-filters {
-    margin: 2rem 0;
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  }
-
   .filter-buttons {
     display: flex;
     gap: 0.5rem;
@@ -502,11 +522,8 @@
 
   .count {
     font-size: 0.8em;
-    opacity: 0.8;
-  }
-
-  .task-list {
-    margin: 2rem 0;
+    opacity: 0.7;
+    margin-left: 0.25rem;
   }
 
   .loading,
@@ -531,48 +548,80 @@
     margin-top: 1rem;
   }
 
-  .task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-
-  .task-card {
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+  .task-list-container {
+    border: none;
+    border-radius: 0;
     background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: all 0.2s ease;
+    overflow: hidden;
   }
 
-  .task-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-  }
-
-  .task-card h3 {
-    margin: 0 0 0.5rem 0;
-    color: #333;
-  }
-
-  .task-card .description {
-    margin: 0 0 1rem 0;
-    color: #666;
+  .task-list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.5fr 1fr;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+    color: #555;
     font-size: 0.9rem;
-    line-height: 1.4;
   }
 
-  .task-meta {
-    display: flex;
-    gap: 0.5rem;
+  .task-list-body {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .task-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.5fr 1fr;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
     align-items: center;
-    margin-bottom: 0.5rem;
   }
 
-  .priority,
-  .status {
+  .task-row:hover {
+    background-color: #f8f9fa;
+  }
+
+  .task-row:last-child {
+    border-bottom: none;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .title-column {
+    align-items: flex-start;
+  }
+
+  .task-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+  }
+
+  .task-description {
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    margin-top: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .priority-button,
+  .status-button {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-size: 0.8rem;
@@ -580,38 +629,40 @@
     border: none;
     cursor: pointer;
     transition: opacity 0.2s ease;
+    width: fit-content;
   }
 
-  .priority:hover,
-  .status:hover {
+  .priority-button:hover,
+  .status-button:hover {
     opacity: 0.8;
   }
 
-  .priority.high {
+  .priority-button.high {
     background: #ffe6e6;
     color: #cc0000;
   }
 
-  .priority.medium {
+  .priority-button.medium {
     background: #fff3e0;
     color: #e65100;
   }
 
-  .priority.low {
+  .priority-button.low {
     background: #e8f5e8;
     color: #2e7d32;
   }
 
-  .status {
+  .status-button {
     background: #f0f0f0;
     color: #333;
+    text-transform: capitalize;
   }
 
   .tags {
     display: flex;
     gap: 0.25rem;
     flex-wrap: wrap;
-    margin-bottom: 0.5rem;
+    align-items: center;
   }
 
   .tag {
@@ -620,12 +671,62 @@
     color: #1565c0;
     border-radius: 3px;
     font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .tag-more {
+    padding: 0.15rem 0.4rem;
+    background: #f0f0f0;
+    color: #666;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+
+  .no-tags,
+  .no-due-date {
+    color: #999;
+    font-style: italic;
+    font-size: 0.85rem;
   }
 
   .due-date {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: #666;
-    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .task-list-header,
+    .task-row {
+      grid-template-columns: 2fr 0.8fr 1fr 1fr 0.8fr;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .task-list-header {
+      font-size: 0.8rem;
+    }
+
+    .task-title {
+      font-size: 0.9rem;
+    }
+
+    .task-description {
+      font-size: 0.8rem;
+      -webkit-line-clamp: 1;
+    }
+
+    .priority-button,
+    .status-button {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+    }
+
+    .tag {
+      font-size: 0.65rem;
+    }
   }
 
   .add-task {

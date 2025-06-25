@@ -1,24 +1,29 @@
-<script>
+<script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { updateTask } from "$lib/taskService.js";
+  import { updateTask, deleteTask } from "$lib/taskService.js";
   import Modal from "../ui/Modal.svelte";
+  import Button from "../boss-ui/Button.svelte";
 
-  export let task = null;
-  export let isOpen = false;
+  // Force Tailwind to include danger variant: boss-button--danger
+
+  export let task: any = null;
+  export let isOpen: boolean = false;
 
   const dispatch = createEventDispatcher();
 
   // Local task data for editing
-  let editableTask = {};
-  let saving = false;
-  let saveError = null;
+  let editableTask: any = {};
+  let saving: boolean = false;
+  let saveError: string | null = null;
+  let deleting: boolean = false;
+  let completing: boolean = false;
 
   // Watch for task changes and update editable copy
   $: if (task) {
     editableTask = { ...task };
   }
 
-  async function saveField(field, value) {
+  async function saveField(field: string, value: any) {
     if (!task || saving) return;
 
     saving = true;
@@ -31,7 +36,7 @@
         dispatch("taskUpdated", result.data);
         editableTask = { ...result.data };
       } else {
-        saveError = result.error;
+        saveError = result.error || "Failed to save changes";
         // Revert the field
         editableTask[field] = task[field];
       }
@@ -40,6 +45,59 @@
       editableTask[field] = task[field];
     } finally {
       saving = false;
+    }
+  }
+
+  async function handleCompleteTask() {
+    if (!task || completing || task.status === "done") return;
+
+    completing = true;
+    saveError = null;
+
+    try {
+      const result = await updateTask(task.id, { status: "done" });
+      if (result.success) {
+        dispatch("taskUpdated", result.data);
+        editableTask = { ...result.data };
+        // Show success message and close after a brief delay
+        setTimeout(() => {
+          handleClose();
+        }, 500);
+      } else {
+        saveError = result.error || "Failed to complete task";
+      }
+    } catch (error) {
+      saveError = "Failed to complete task";
+    } finally {
+      completing = false;
+    }
+  }
+
+  async function handleDeleteTask() {
+    if (!task || deleting) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      `Are you sure you want to delete "${task.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    deleting = true;
+    saveError = null;
+
+    try {
+      const result = await deleteTask(task.id);
+      if (result.success) {
+        dispatch("taskDeleted", task);
+        handleClose();
+      } else {
+        saveError = result.error || "Failed to delete task";
+      }
+    } catch (error) {
+      saveError = "Failed to delete task";
+    } finally {
+      deleting = false;
     }
   }
 
@@ -254,6 +312,40 @@
       {#if saving}
         <div class="saving-indicator">Saving changes...</div>
       {/if}
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <div class="action-buttons__primary">
+          <Button
+            variant="primary"
+            size="md"
+            disabled={completing || task.status === "done"}
+            onclick={handleCompleteTask}
+          >
+            {#if completing}
+              Completing...
+            {:else if task.status === "done"}
+              ✓ Completed
+            {:else}
+              Mark Complete
+            {/if}
+          </Button>
+        </div>
+
+        <div class="action-buttons__danger">
+          <button
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 bg-red-600 text-white hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+            disabled={deleting}
+            on:click={handleDeleteTask}
+          >
+            {#if deleting}
+              Deleting...
+            {:else}
+              Delete Task
+            {/if}
+          </button>
+        </div>
+      </div>
     </div>
   {/if}
 </Modal>
@@ -326,5 +418,46 @@
     text-align: center;
     font-size: 0.9rem;
     margin-top: 1rem;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+  }
+
+  .action-buttons__primary {
+    flex: 0 0 auto;
+  }
+
+  .action-buttons__danger {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .action-buttons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .action-buttons__primary,
+    .action-buttons__danger {
+      flex: none;
+      margin-left: 0;
+    }
+
+    .action-buttons__danger {
+      order: 2;
+    }
+
+    .action-buttons__primary {
+      order: 1;
+    }
   }
 </style>

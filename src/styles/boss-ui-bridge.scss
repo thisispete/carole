@@ -38,6 +38,10 @@
   &--ghost {
     @apply hover:bg-boss-neutral/10;
   }
+  
+  &--danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
 }
 
 /* Card Component Bridge */

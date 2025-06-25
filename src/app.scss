@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BOSS UI Component Styles */
+@import './styles/boss-ui-bridge.scss';
+@import './styles/components.scss';
+@import './styles/layout.scss';
+@import './styles/utilities.scss';
+
 /* Global Base Styles */
 :root {
   /* BOSS UI Design Tokens (to be synced with team) */
