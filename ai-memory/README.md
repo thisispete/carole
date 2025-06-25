@@ -2,8 +2,9 @@
 
 **Project:** Carole (AI Personal Assistant)  
 **Last Updated:** 2025-01-13  
-**Status:** Phase 2.8.1 Complete - Landing Page Parity & UI Polish  
-**Roadmap:** Reordered Jan 2025 - Vector Integration (Phase 3) prioritized over Smart Features (Phase 4)
+**Status:** Phase 2.8 Complete - Ready for Phase 3 Planning  
+**Roadmap:** Phase Ordering Finalized Jan 2025 - Vector Integration (Phase 3) → Smart Features (Phase 4)  
+**Next Steps:** Begin Phase 3 brainstorming sessions for vector database architecture
 
 ## Memory Bank Structure
 
@@ -90,6 +91,16 @@ graph TD
 - ❌ **No keyword matching**: No `messageLower.includes("need to")` logic
 - ❌ **No regex patterns**: No hardcoded phrase detection
 - ✅ **Honest failure handling**: When AI can't understand, ask for clarification
+
+#### Single-Question Brainstorming Methodology
+
+**Process Innovation**: Proven effective approach for feature planning and user collaboration.
+
+- ✅ **One question at a time**: Never overwhelm with 20+ questions
+- ✅ **Iterative building**: Each answer informs the next logical question
+- ✅ **Decision capture**: Document both process and content decisions
+- ✅ **Mandatory pre-phase**: Always brainstorm before major development phases
+- 📄 **Reference**: See `ai-memory/BRAINSTORMING.md` and `.cursorrules` for full methodology
 
 #### Never Fake Responses - Authenticity First
 
