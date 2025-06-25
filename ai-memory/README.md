@@ -2,7 +2,7 @@
 
 **Project:** Carole (AI Personal Assistant)  
 **Last Updated:** 2025-01-13  
-**Status:** Phase 2.8 Complete - Production Ready
+**Status:** Phase 2.8.1 Complete - Landing Page Parity & UI Polish
 
 ## Memory Bank Structure
 
@@ -195,10 +195,40 @@ NODE_ENV=development
 
 #### Key Development Commands
 
-- `npm run dev` - Start development server (http://localhost:5174)
+- `npm run dev` - Start development server (http://localhost:5173)
 - `npm run build` - Build for production
 - `npm run check` - TypeScript type checking
 - `node test-connection-monitor.js` - Test Databricks connectivity
+
+#### Terminal Session Management (Critical Development Pattern)
+
+**🚨 ALWAYS maintain single terminal session during development:**
+
+1. **Check First, Start Second**: Before starting any long-running process, check if it's already running:
+
+   ```bash
+   # Check if dev server is already running
+   lsof -i :5173
+   ps aux | grep -E "(vite|node.*dev)" | grep -v grep
+   ```
+
+2. **Single Terminal Session**: Use the same terminal throughout work session - don't spawn new terminals
+
+   - First command creates new shell session
+   - All subsequent commands use same shell (maintains directory, environment, running processes)
+
+3. **Background Processes**: Run dev servers in background (`is_background: true`) to allow other commands
+
+4. **Process Management**: Use `killall node` or targeted `pkill -f "vite dev"` if multiple instances spawn
+
+**Why This Matters**:
+
+- Prevents port conflicts (5173, 5174, 5175...)
+- Avoids resource waste from multiple dev servers
+- Maintains hot reload functionality in single instance
+- Eliminates need to constantly kill node processes
+
+**Pattern**: Check → Confirm clean state → Start single instance → Maintain session
 
 ### Technical Constraints
 
