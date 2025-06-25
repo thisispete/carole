@@ -326,3 +326,120 @@ node test-connection-monitor.js 10 2000  # 10 tests, 2s apart
 3. **Intent recognition testing** with edge cases and ambiguous inputs
 4. **Database state verification** after all operations
 5. **Error scenario testing** with service unavailability simulation
+
+---
+
+## 🧪 Testing Patterns & Verification Methods
+
+### **Comprehensive AI Testing Framework** (from test files)
+
+**Performance Testing Pattern:**
+
+```bash
+# Quick verification of efficient operations
+curl -s http://localhost:5173/api/tasks | jq '.data[] | {id, title, status, priority, context_tags}' | head -5
+
+# Check console logs for efficiency:
+# ✅ Should see: "Using efficient task lookup with getTaskById()"
+# ❌ Should NOT see: "Fetching all tasks to find one"
+```
+
+**AI Title Extraction Quality Tests:**
+
+```bash
+# Test conversational input → clean title extraction
+"I need to call the dentist" → Expected: "Call Dentist"
+"I should finish the quarterly report" → Expected: "Quarterly Report"
+"Create a task for testing the new feature" → Expected: "Test New Feature"
+"I need to review the budget for next month" → Expected: "Budget Review"
+```
+
+**Context Resolution Testing:**
+
+```bash
+# Multi-turn conversation verification
+1. "Call dentist for checkup" (create task)
+2. "make the dentist task high priority" (keyword resolution)
+3. "that should be urgent too" (conversation context)
+
+# Expected: Each step should resolve to the same task correctly
+```
+
+**Database Verification Pattern:**
+
+```bash
+# Test operation integrity (critical for truthfulness)
+1. Perform AI operation (e.g., "mark task complete")
+2. Immediately verify in database
+3. AI should only claim success if database actually changed
+4. False positives indicate verification failure
+```
+
+**Array Operations Testing:**
+
+```bash
+# Smart tag/location management
+Task: tags=["health", "call"] → "add teeth tag" → ["health", "call", "teeth"]
+Task: tags=["health", "call", "urgent"] → "remove urgent" → ["health", "call"]
+Task: locations=["home"] → "add office location" → ["home", "office"]
+```
+
+**Relative Date Parsing Verification:**
+
+```bash
+# Test from current date context
+Current: 2025-01-13 (Monday)
+"due Friday" → Expected: 2025-01-17
+"due next Monday" → Expected: 2025-01-20
+"due tomorrow" → Expected: 2025-01-14
+```
+
+### **Critical Testing Principles**
+
+**AI-First Verification:**
+
+- ✅ LLM handles intent recognition (not pattern matching)
+- ✅ Task titles extracted intelligently (not copied verbatim)
+- ✅ Context resolution uses AI understanding
+- ✅ Natural language variations work correctly
+
+**Operation Integrity:**
+
+- ✅ Only reports success when operations actually succeed
+- ✅ Database verification confirms all changes
+- ✅ Clear error messages for failures
+- ✅ No false positive confirmations
+
+**Performance Standards:**
+
+- ✅ Uses `getTaskById()` for single task operations
+- ✅ Avoids bulk task fetching for individual lookups
+- ✅ Efficient array operations (smart add/remove/replace)
+- ✅ Optimized database queries
+
+### **Testing Workflow for Development**
+
+```bash
+# 1. Start development environment
+npm run dev
+
+# 2. Test core AI functionality
+"I need to prepare the presentation for Monday" # Check title quality
+"Make that high priority"                      # Check context resolution
+"I finished the training modules"              # Check completion detection
+
+# 3. Verify database state
+curl -s http://localhost:5173/api/tasks | jq '.data[] | {title, status, priority}'
+
+# 4. Test edge cases
+"Mark my presentation task as done"            # Test with missing context
+"Update the urgent task"                       # Test with multiple matches
+```
+
+**Debugging Red Flags:**
+
+- AI claiming success but database unchanged
+- Task titles copying full user input
+- "Fetching all tasks" logs for single operations
+- Context resolution failures ("that task" not working)
+- False positive success messages

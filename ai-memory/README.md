@@ -224,17 +224,90 @@ NODE_ENV=development
 
 #### Production Dependencies
 
-- `@supabase/supabase-js`: v2.x - Database client
-- `svelte`: v4.x - Frontend framework
-- `tailwindcss`: v3.4.0 - CSS framework
-- `@tailwindcss/typography`: Typography plugin
+- `@supabase/supabase-js`: v2.50.0 - Database client with real-time subscriptions
+- `@sveltejs/kit`: v2.21.5 - SvelteKit framework with file-based routing
+- `svelte`: v5.34.6 - Frontend framework with reactive updates
+- `@types/node`: v24.0.3 - Node.js type definitions for TypeScript
+- `typescript`: v5.8.3 - Type checking and enhanced developer experience
+- `vite`: v6.3.5 - Build tool and development server with HMR
 
 #### Development Dependencies
 
-- `@sveltejs/kit`: v2.x - SvelteKit framework
-- `typescript`: v5.x - Type checking
-- `vite`: v6.x - Build tool
-- `autoprefixer`: CSS post-processing
+- `tailwindcss`: v3.4.0 - CSS framework (downgraded from v4 for stability)
+- `@tailwindcss/typography`: v0.5.16 - Typography plugin for content styling
+- `postcss`: v8.5.6 - CSS post-processing
+- `autoprefixer`: v10.4.21 - CSS vendor prefix automation
+- `sass`: v1.89.2 - SCSS preprocessing for component styles
+- `svelte-check`: v4.2.1 - TypeScript checking for Svelte components
+
+#### Critical Version Decisions
+
+**Tailwind CSS v3.4.0 (NOT v4.x):**
+
+- v4 caused PostCSS preprocessing errors during development
+- v3.4.0 provides stability with all required features
+- **Lesson**: Prioritize development stability over bleeding-edge features
+
+**SvelteKit v2.x + Svelte v5.x:**
+
+- Latest stable versions with excellent TypeScript support
+- File-based routing and server-side functionality
+- Reactive updates and component lifecycle management
+
+### Development Scripts & Commands
+
+```bash
+# Primary development workflow
+npm run dev          # Start Vite dev server (http://localhost:5173)
+npm run build        # Build for production
+npm run preview      # Preview production build locally
+npm run check        # TypeScript checking for all files
+npm run check:watch  # Continuous type checking during development
+
+# Testing & debugging
+node test-connection-monitor.js              # Test Databricks connectivity
+node test-connection-monitor.js --iterations 50 --delay 2000  # Custom testing
+```
+
+### Critical File Patterns for AI Development
+
+#### Testing Files (Root Directory)
+
+- **`test-ai-fixes.md`** - Comprehensive AI testing patterns and verification methods
+- **`test-comprehensive-fixes.md`** - Multi-layered testing approach for all AI fixes
+- **`test-array-operations.md`** - Specific testing for tag/location array operations
+- **`test-connection-monitor.js`** - Service reliability testing and monitoring
+
+**Note**: Test markdown files contain valuable debugging patterns that should be consulted when encountering AI implementation issues.
+
+#### Configuration Patterns
+
+- **`.env.example`** - Environment variable template (never commit actual tokens)
+- **`.gitignore`** - Comprehensive ignore patterns for Node.js, SvelteKit, and development files
+- **`vite.config.js`** - Proxy configuration for Databricks API routing during development
+
+### Essential Environment Variables Reference
+
+```env
+# Database (Required)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# AI Integration (Required)
+VITE_DATABRICKS_HOST=https://block-lakehouse-production.cloud.databricks.com
+VITE_DATABRICKS_TOKEN=dapi-your-databricks-pat-token
+VITE_DATABRICKS_ENV=production
+VITE_DEFAULT_AI_MODEL=claude-3-5-sonnet
+
+# Development
+NODE_ENV=development
+```
+
+**Security Notes:**
+
+- Never commit `.env.local` or actual PAT tokens to repository
+- Use `.env.example` as template for required variables
+- PAT tokens should be regenerated every 90 days for security
 
 ### Tool Usage Patterns
 
@@ -352,163 +425,4 @@ CREATE TYPE task_status AS ENUM ('backlog', 'todo', 'in_progress', 'blocked', 'd
 
 #### Development Workflow
 
-1. Local development with `npm run dev`
-2. Feature testing with real database and AI integration
-3. Type checking with `npm run check`
-4. Build verification with `npm run build`
-5. Deployment through static site hosting
-
-### Historical Context & Evolution
-
-#### Critical Lessons Learned
-
-- **Environment Stability**: Development tools must be rock solid before feature development (Tailwind v4 → v3.4.0)
-- **AI Authenticity**: Never fake responses - all AI claims must be backed by real actions
-- **Incremental Complexity**: Build simple foundation first, add intelligence incrementally
-- **Service Resilience**: External dependencies require retry logic and error handling
-- **Stability over Bleeding Edge**: Prioritize working systems over latest features
-
-#### Major Architecture Shifts
-
-1. **Phase 1**: Basic web app with database persistence
-2. **Phase 2**: AI integration with conversational interface
-3. **Phase 2.8**: Production-quality UI with real-time task management
-4. **Current**: Sophisticated AI tool system with semantic intent recognition
-
-#### Known Problems Solved
-
-- **Title Extraction**: AI was copying full prompts as titles instead of extracting meaningful content
-- **Status Updates**: Operations claimed success but didn't actually update database
-- **Intent Recognition**: "I finished X" was creating new tasks instead of marking existing ones complete
-- **Service Reliability**: Intermittent 503 errors resolved with retry logic and connection monitoring
-
----
-
-## Key Repository Folders and Files
-
-### Core Application Files
-
-- **`src/routes/+page.svelte`** - Main landing page with AI chat interface and priority dashboard
-- **`src/routes/tasks/+page.svelte`** - Task browser and management interface
-- **`src/routes/+layout.svelte`** - Global layout with navigation and connection status
-- **`src/lib/components/ChatInterface.svelte`** - Main conversational AI interface
-- **`src/lib/components/ConnectionStatus.svelte`** - Real-time service connectivity indicators
-
-### AI System Files
-
-- **`src/lib/aiTaskTools.ts`** - Core AI task operations (create, update, analyze, search)
-- **`src/lib/aiToolExecutor.ts`** - Tool execution engine with intent recognition
-- **`src/lib/aiContext.ts`** - AI context management and task state awareness
-- **`src/lib/aiEnhancedContext.ts`** - Advanced organizational and temporal context
-- **`src/lib/databricksService.ts`** - Databricks AI integration with multi-model support
-
-#### Database & Services
-
-- **`src/lib/taskService.js`** - Complete CRUD operations for task management
-- **`src/lib/supabase.js`** - Database connection and configuration
-- **`src/lib/database.sql`** - Complete PostgreSQL schema with RLS policies
-
-#### UI Components
-
-- **`src/lib/components/boss-ui/`** - BOSS design system components (Button, Card, Badge, Input)
-- **`src/lib/components/task/`** - Task-specific UI components (modals, detail views)
-- **`src/lib/components/ui/`** - Reusable UI components (Modal, ConfirmDialog, ContextMenu)
-
-#### Configuration Files
-
-- **`package.json`** - Dependencies, scripts, and project metadata
-- **`svelte.config.js`** - SvelteKit configuration
-- **`vite.config.js`** - Vite build configuration with proxy setup
-- **`tailwind.config.js`** - Tailwind CSS configuration with BOSS UI integration
-- **`postcss.config.js`** - PostCSS configuration for CSS processing
-
-#### Development & Testing
-
-- **`test-connection-monitor.js`** - Databricks service health testing and monitoring
-- **`.env.example`** - Environment variable template for setup
-
-#### Documentation (Being Deprecated)
-
-- **`docs/`** - Traditional documentation folder being migrated to AI memory bank
-- **`ai-memory/`** - AI-focused memory bank (this folder) with complete project context
-
----
-
-## Critical Development Context from Documentation Migration
-
-### Database Schema Details (from docs/database-schema.md)
-
-**Tasks Table Architecture:**
-
-```sql
--- Priority Scale: 0-10 (0=none, 1-3=low, 4-6=medium, 7-8=high, 9-10=critical)
--- Difficulty Scale: 0-10 (0=trivial, 1-3=easy, 4-6=moderate, 7-8=hard, 9-10=extremely hard)
--- Status Workflow: backlog → todo → in_progress → blocked → done
--- Array Fields: context_tags TEXT[], locations TEXT[]
--- Vector Support: search_vector tsvector for full-text search
--- Hierarchy: parent_task_id for subtask relationships
-```
-
-**Key Database Patterns:**
-
-- Row Level Security (RLS) enforced for multi-tenant support
-- PostgreSQL array fields for tags and locations (native support)
-- Generated tsvector column for efficient full-text search
-- UUID primary keys with cascading deletes for data integrity
-- JSONB fields for flexible metadata storage
-
-### Environment Setup Requirements (from docs/development-setup.md)
-
-**Critical Environment Variables:**
-
-```env
-# Required for database operations
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
-
-# Required for AI functionality
-VITE_DATABRICKS_HOST=https://block-lakehouse-production.cloud.databricks.com
-VITE_DATABRICKS_TOKEN=dapi-your-databricks-pat-token
-VITE_DATABRICKS_ENV=production
-VITE_DEFAULT_AI_MODEL=claude-3-5-sonnet
-```
-
-**Databricks PAT Token Setup:**
-
-1. Access `https://block-lakehouse-production.cloud.databricks.com`
-2. Navigate to Settings → Developer → Access tokens → Generate new token
-3. Use comment: "Carole AI Assistant Local Development"
-4. Recommended lifetime: 90 days
-5. Copy token securely - never commit to repository
-
-### Current Project Status & Roadmap (from docs/project-plan.md)
-
-**Phase 2.8 Status - Current Development Priority:**
-
-- **Enhanced Task UI**: Interactive task detail modals with auto-save functionality
-- **Improved Task Filtering**: Better task browsing and organization capabilities
-- **UI Polish**: Component refinements and user experience improvements
-- **Timeline**: 1-2 weeks for essential daily usability improvements
-
-**Phase 3 Preparation - Vector Integration:**
-
-- Conversation memory persistence with pgvector
-- Semantic search across task history and conversations
-- Advanced context tracking and pattern recognition
-- Long-term user preference learning
-
-### User Experience Context (from docs/requirements.md)
-
-**Core User Workflows:**
-
-- **Priority Dashboard**: "Open app → see top 3 priorities → start working"
-- **Natural Language Operations**: All task management through conversation
-- **Conversational Context**: AI remembers task references across conversation turns
-- **Proactive Insights**: AI suggests optimizations and identifies blockers
-
-**AI Personality & Behavior Guidelines:**
-
-- **Tone**: Observational ("I noticed...") not diagnostic ("You have a problem...")
-- **Approach**: Helpful ("Want to try...") not prescriptive ("You should...")
-- **Support**: Supportive ("Rough week?") not clinical language
-- **Perfect Example**: "You've been mentioning feeling overwhelmed - want to focus on just one small win today?"
+1. Local development with `
