@@ -1,167 +1,229 @@
 # Carole AI Personal Assistant
 
-**Status:** Phase 2.5 - Critical AI Fixes Needed 🚨 | Database Working ✅ | AI Integration Issues ⚠️
+**Status:** Phase 2.8 - Production Ready Core with UI Improvements in Progress
 
-An AI personal assistant for intelligent task management with natural language processing. Currently has a solid foundation with working database operations, but needs critical fixes to AI execution quality before being production-ready.
+An intelligent AI personal assistant for natural language task management. Chat with your AI assistant to create, update, and organize tasks using conversational language. Built with SvelteKit, Supabase, and Block's internal Databricks AI platform.
 
-## 🎯 **Current Status (Phase 2.5 - Critical AI Fixes Needed)**
+## 🎯 **What Carole Does**
 
-### ✅ **What's Actually Working**
+**Natural Language Task Management:**
 
-**🗄️ Real Database Integration:**
+- **"Create a task to review the quarterly budget"** → AI creates task with appropriate priority
+- **"Mark the website redesign task as done"** → AI finds and completes the matching task
+- **"What should I work on today?"** → AI analyzes your tasks and provides personalized recommendations
+- **"Make that high priority"** → AI updates the previously mentioned task
 
-- **Supabase Database**: Complete CRUD operations with real persistence
-- **Task Management**: Full lifecycle from creation to completion
+**Smart Features:**
+
+- **Proactive Priority Dashboard**: See your top 3 most important tasks immediately on app open
+- **Multi-Model AI**: Choose between Claude 3.5 Sonnet, GPT-4o, and Llama 3.1 405B
+- **Real-Time Connectivity**: Visual indicators for database and AI service status
+- **Rich Task Data**: Priority levels, difficulty estimates, tags, locations, due dates
 - **5-State Workflow**: backlog → todo → in_progress → blocked → done
-- **Rich Task Data**: Tags, locations, priority (0-10), difficulty, time estimates
-- **Row Level Security**: User isolation and secure data access
 
-**🛠️ AI Task Tools System (WITH CRITICAL ISSUES):**
-
-- **Basic Task Operations**: AI can create tasks, but titles are broken (copies full prompts)
-- **Intent Recognition**: AI understands commands but execution often fails
-- **Status Updates**: AI claims success but database updates don't actually happen
-- **Context Issues**: "Make that high priority" doesn't work - no conversation memory
-- **Tool Pipeline**: Framework exists but needs quality fixes
-
-**🤖 AI Integration (WORKING):**
-
-- **Block Databricks**: Live integration with Claude 3.5 Sonnet, GPT-4o, Llama 3.1 405B ✅
-- **Multi-Model Support**: Switch between AI models in real-time ✅
-- **Natural Language Processing**: AI interprets intent well, but execution is broken ⚠️
-- **Conversational Quality**: AI responses are natural and helpful ✅
-- **Connection Status**: Real-time connectivity indicators ✅
-
-**🎨 Modern UI:**
-
-- **Beautiful Chat Interface**: Real-time messaging with typing indicators
-- **Model Selection**: Dropdown to choose between AI models
-- **Connection Status**: Visual indicators for database and AI connectivity
-- **Priority Dashboard**: Top 3 tasks with intelligent sorting
-- **Responsive Design**: BOSS UI design system with Tailwind CSS
-
-### 🚨 **IMMEDIATE PRIORITY: Critical AI Fixes**
-
-**Phase 2.5: Fix AI Execution Quality** - Must complete before Phase 3:
-
-- **🔧 Title Extraction**: Fix AI copying full prompts as task titles
-- **✅ Status Updates**: Make AI status changes actually update the database
-- **🧠 Context Tracking**: Enable "Make that high priority" to work within conversations
-- **🎯 Truthful Responses**: Stop AI from claiming success when operations fail
-
-**Evidence**: Database operations work perfectly when called directly, but AI integration has quality issues.
-
-**Ready for Implementation**: Complete action plan available in `docs/ai-fixes-implementation-plan.md`
-
-### 🏗️ **Architecture**
-
-- **Frontend**: SvelteKit + TypeScript
-- **AI**: Block Databricks (Claude 3.5 Sonnet, GPT-4o, Llama 3.1 405B)
-- **Database**: Supabase (PostgreSQL with Row Level Security)
-- **Authentication**: PAT tokens for Databricks, Supabase auth for database
-- **Styling**: Tailwind CSS v3.4.0 + BOSS UI design system
-- **Build System**: Vite + PostCSS with proxy configuration
-- **Deployment**: Ready for production deployment
-
-## 🚀 **Setup Instructions**
+## 🚀 **Quick Start**
 
 ### Prerequisites
 
-- Node.js 18+
-- Supabase account
-- Access to Block's internal Databricks platform
+- **Node.js 18+** and npm
+- **Supabase account** (free tier works)
+- **Access to Block's Databricks platform** (internal AI models)
 
 ### Installation
 
 ```bash
-git clone https://github.com/thisispete/carole.git
+git clone <repository-url>
 cd carole
 npm install
+cp .env.example .env.local
+# Configure environment variables (see below)
+npm run dev
 ```
-
-### Configuration
-
-1. **Supabase Setup:**
-
-   - Create a new Supabase project
-   - Copy Project URL and anon key
-   - Run the SQL schema from `src/lib/database.sql`
-
-2. **Databricks Setup:**
-
-   - Access Block's Databricks at `https://block-lakehouse-production.cloud.databricks.com`
-   - Generate a Personal Access Token (Settings → Developer → Access tokens)
-   - Copy the token securely
-
-3. **Environment Variables:**
-
-   ```bash
-   # Create .env.local with:
-   VITE_SUPABASE_URL=your-supabase-project-url
-   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-   VITE_DATABRICKS_TOKEN=your-databricks-pat-token
-   VITE_DATABRICKS_ENV=production
-   VITE_DATABRICKS_HOST=https://block-lakehouse-production.cloud.databricks.com
-   ```
-
-4. **Start Development:**
-   ```bash
-   npm run dev
-   ```
 
 Visit `http://localhost:5173` and start chatting with your AI assistant!
 
-## 🤖 **Current AI Behavior (Issues Identified)**
+### Environment Configuration
 
-**What You'll Experience:**
+Create `.env.local` with these required variables:
 
-- **"Create a task to review the quarterly budget"** → Creates task titled "create a task to review the quarterly budget" ❌
-- **"Mark the website redesign task as done"** → AI says "marked as done!" but task stays "todo" ❌
-- **"What should I work on today?"** → AI gives great advice based on real task data ✅
-- **"Make that high priority"** → AI creates new task instead of updating previous one ❌
+```env
+# Supabase Database (required)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
 
-**Good Conversational AI:**
+# Block Databricks AI (required for AI features)
+VITE_DATABRICKS_HOST=https://block-lakehouse-production.cloud.databricks.com
+VITE_DATABRICKS_TOKEN=your_databricks_pat_token
+VITE_DATABRICKS_ENV=production
+VITE_DEFAULT_AI_MODEL=claude-3-5-sonnet
 
-- **Natural Responses**: AI provides helpful, contextual responses ✅
-- **Intent Recognition**: AI understands what you want to do ✅
-- **Task Awareness**: AI can see and analyze your actual tasks ✅
-- **Multi-Model Support**: Switch between Claude, GPT-4o, Llama ✅
+# Development
+NODE_ENV=development
+```
 
-**Critical Issues:**
+### Database Setup
 
-- **Title Extraction Broken**: Copies full prompts instead of meaningful titles
-- **Status Updates Fake**: Claims success but database unchanged
-- **No Context Memory**: Doesn't remember "that task" from previous message
-- **Truthfulness Issues**: Says operations succeeded when they failed
+1. **Create Supabase Project**: Sign up at [supabase.com](https://supabase.com)
+2. **Copy Project Credentials**: Get your Project URL and anon key from Settings → API
+3. **Run Database Schema**: Execute the SQL from `src/lib/database.sql` in your Supabase SQL editor
+4. **Verify Connection**: The app will show database connectivity status
 
-**Ready to Fix**: All issues identified with technical solutions in docs.
+### Databricks AI Setup (Block Internal)
+
+1. **Access Databricks**: Go to `https://block-lakehouse-production.cloud.databricks.com`
+2. **Generate PAT Token**:
+   - Click your username → Settings → Developer → Access tokens → Generate new token
+   - Comment: "Carole AI Assistant"
+   - Copy the token securely
+3. **Add to Environment**: Set `VITE_DATABRICKS_TOKEN=dapi-your-token-here`
+
+**Available Models:**
+
+- **Claude 3.5 Sonnet**: Best for complex reasoning and task analysis
+- **GPT-4o**: OpenAI's multimodal capabilities
+- **Llama 3.1 405B**: Meta's largest open model
+
+## 🏗️ **Architecture Overview**
+
+- **Frontend**: SvelteKit + TypeScript + Tailwind CSS
+- **Database**: Supabase (PostgreSQL with Row Level Security)
+- **AI**: Block Databricks (Claude 3.5 Sonnet, GPT-4o, Llama 3.1 405B)
+- **Authentication**: PAT tokens for Databricks, Supabase auth for database
+- **Build**: Vite with proxy configuration for seamless development
+
+**Key Components:**
+
+- **AI Task Tools**: Natural language task operations with semantic intent recognition
+- **Chat Interface**: Real-time conversational UI with typing indicators
+- **Task Service**: Complete CRUD operations with database persistence
+- **AI Context System**: Rich task state awareness for intelligent responses
+
+## 📊 **Current Status & Roadmap**
+
+### ✅ **What's Working (Production Ready)**
+
+- **✅ Database Integration**: Complete CRUD with Supabase PostgreSQL
+- **✅ AI Integration**: Live connection to Block's Databricks with all models
+- **✅ Natural Language Processing**: AI understands and executes task commands
+- **✅ Task Management**: Full lifecycle from creation to completion
+- **✅ Modern UI**: Beautiful chat interface with real-time updates
+- **✅ Connection Monitoring**: Real-time status indicators for all services
+
+### 🚧 **Current Development (Phase 2.8)**
+
+- **Enhanced Task UI**: Interactive task detail modals with auto-save
+- **Better Task Filtering**: Improved task browsing and organization
+- **UI Polish**: Component refinements and user experience improvements
+
+### 🔄 **Next Up (Phase 3)**
+
+- **Vector Integration**: Conversation memory and semantic search with pgvector
+- **Advanced Context**: Long-term learning and pattern recognition
+- **Proactive Insights**: AI-driven task analysis and optimization suggestions
+
+## 🛠️ **Development**
+
+### Daily Workflow
+
+```bash
+# Start development server
+npm run dev
+
+# Type checking
+npm run check
+
+# Build for production
+npm run build
+
+# Test Databricks connectivity
+node test-connection-monitor.js
+```
+
+### Project Structure
+
+```
+src/
+├── routes/                    # SvelteKit pages
+│   ├── +layout.svelte        # Main layout with navigation
+│   ├── +page.svelte          # Landing page with AI chat
+│   ├── tasks/+page.svelte    # Task management interface
+│   └── analytics/+page.svelte # Analytics (placeholder)
+├── lib/
+│   ├── components/           # UI components
+│   │   ├── ChatInterface.svelte
+│   │   ├── ConnectionStatus.svelte
+│   │   ├── task/            # Task-specific components
+│   │   ├── ui/              # Reusable UI components
+│   │   └── boss-ui/         # BOSS design system
+│   ├── aiTaskTools.ts       # Core AI task operations
+│   ├── aiToolExecutor.ts    # AI tool execution engine
+│   ├── aiContext.ts         # AI context management
+│   ├── databricksService.ts # AI model integration
+│   ├── taskService.js       # Database operations
+│   └── supabase.js          # Database connection
+└── styles/                   # Global styling and design system
+```
+
+### Database Schema Overview
+
+**Tasks Table** - Core task storage:
+
+- **Identity**: `id`, `user_id`, `title`, `description`
+- **Organization**: `priority` (0-10), `status` (5-state workflow), `tags`, `locations`
+- **AI Features**: `difficulty` (0-10), `time_estimate`, `due_date`
+- **Relationships**: `parent_task_id` for subtasks
+- **Search**: Full-text search with `tsvector`
+
+**Status Workflow**: `backlog` → `todo` → `in_progress` → `blocked` → `done`
+
+## 🧪 **Testing & Development**
+
+### Connection Testing
+
+```bash
+# Test AI connectivity
+node test-connection-monitor.js
+
+# Run with custom parameters
+node test-connection-monitor.js --iterations 50 --delay 2000
+```
+
+### Common Issues
+
+**"Databricks service temporarily unavailable"**
+
+- Check your PAT token in `.env.local`
+- Verify your network connection to Block's internal systems
+- Use the connection monitor to test service health
+
+**Database connection errors**
+
+- Verify Supabase credentials in `.env.local`
+- Check your Supabase project is active
+- Ensure RLS policies are properly configured
 
 ## 📚 **Documentation**
 
-**🚨 IMMEDIATE PRIORITY:**
+- **Setup Guide**: Complete environment setup and troubleshooting
+- **Database Schema**: Full PostgreSQL schema with relationships
+- **API Documentation**: Databricks integration and task service APIs
+- **Development Notes**: Architecture decisions and implementation patterns
 
-- **[AI Fixes Implementation Plan](docs/ai-fixes-implementation-plan.md)** - Complete action plan to fix critical issues
+## 🎯 **Learning Goals Demonstrated**
 
-**Setup & Development:**
+This project showcases:
 
-- **[Development Setup](docs/development-setup.md)** - Environment configuration with Databricks setup
-- **[Database Schema](docs/database-schema.md)** - Complete database design
-- **[Requirements](docs/requirements.md)** - Full feature specifications
-
-**Complete Documentation:**
-
-- **[Documentation Index](docs/docs-index.md)** - Full navigation of all docs
-
-## 🎯 **Learning Goals Achieved**
-
-This project successfully demonstrates:
-
-- **Real AI Integration**: Live connection to enterprise LLM platform
-- **Multi-Model AI**: Claude, GPT-4o, and Llama in production
-- **Context-Aware AI**: AI assistant with access to user's actual data
-- **Enterprise Authentication**: PAT tokens and secure API access
-- **Full-Stack Integration**: Database + AI + Modern Frontend
+- **Enterprise AI Integration**: Production LLM platform integration with PAT authentication
+- **Multi-Model AI**: Real-time switching between Claude, GPT-4o, and Llama models
+- **Semantic Intent Recognition**: AI-powered command interpretation and tool execution
+- **Full-Stack TypeScript**: SvelteKit frontend with comprehensive type safety
+- **Modern Database Patterns**: PostgreSQL with Row Level Security and vector preparation
+- **Real-Time UI**: Conversational interface with live status indicators
 
 ## 📄 **License**
 
-UNLICENSED - Private project for learning purposes.
+UNLICENSED - Private project for learning and development purposes.
+
+---
+
+_Built with ❤️ for intelligent task management_
